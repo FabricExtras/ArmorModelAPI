@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.rpg_foundation.armor_api.neoforge.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+  ],
+  "client": [
+    "ArmorFeatureRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

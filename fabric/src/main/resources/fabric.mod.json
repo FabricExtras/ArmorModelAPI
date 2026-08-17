@@ -2,36 +2,27 @@
   "schemaVersion": 1,
   "id": "armor_model_api",
   "version": "${version}",
-  "name": "ArmorModelAPI",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "name": "Armor Model API",
+  "description": "Renders armor with custom geometry authored in the Bedrock/GeckoLib geo format, through the vanilla armor rendering pipeline.",
   "authors": [
-    "Me!"
+    "ZsoltMolnarrr"
   ],
-  "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
-  },
-  "license": "CC0-1.0",
-  "icon": "assets/armor_model_api/icon.png",
+  "contact": {},
+  "license": "MIT",
   "environment": "*",
   "entrypoints": {
     "main": [
-      "net.rpg_foundation.fabric.ExampleModFabric"
+      "net.rpg_foundation.armor_api.fabric.ArmorModelApiFabric"
     ],
     "client": [
-      "net.rpg_foundation.fabric.client.ExampleModFabricClient"
+      "net.rpg_foundation.armor_api.fabric.client.ArmorModelApiFabricClient"
     ]
   },
-  "mixins": [
-    "armor_model_api.mixins.json"
-  ],
   "depends": {
-    "fabricloader": ">=0.19.3",
+    "fabricloader": ">=0.16.0",
     "minecraft": "~1.21.1",
     "java": ">=21",
-    "fabric-api": "*"
-  },
-  "suggests": {
-    "another-mod": "*"
+    "fabric-rendering-v1": "*",
+    "fabric-resource-loader-v0": "*"
   }
 }
