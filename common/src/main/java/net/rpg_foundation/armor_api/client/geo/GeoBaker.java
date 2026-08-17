@@ -193,14 +193,34 @@ public final class GeoBaker {
                     "Geo model '{}': bone '{}' has fractional box UV ({}, {}); rounding - texture may be off by a pixel",
                     source, boneName, u, v);
         }
+        // Bedrock floors cube sizes when computing box-UV spans (AzureLib: Math.floor per axis)
+        // while the geometry keeps the fractional size. Vanilla derives UV spans from the cuboid
+        // size, so we pass the FLOORED size - keeping the UV spans texel-exact - and return the
+        // shaved-off fraction through Dilation, which grows geometry symmetrically without
+        // touching UVs. The min corner shifts by half the fraction so the cube stays in place.
+        // 294 of 504 cubes across the RPG Series geo files are fractional; without this, their
+        // UVs sample half a texel off (bleeding edges, "missing" faces on transparent neighbors).
+        float sizeX = cube.size()[0];
+        float sizeY = cube.size()[1];
+        float sizeZ = cube.size()[2];
+        float flooredX = (float) Math.floor(sizeX);
+        float flooredY = (float) Math.floor(sizeY);
+        float flooredZ = (float) Math.floor(sizeZ);
+        float halfFracX = (sizeX - flooredX) / 2f;
+        float halfFracY = (sizeY - flooredY) / 2f;
+        float halfFracZ = (sizeZ - flooredZ) / 2f;
+
         builder.uv(Math.round(u), Math.round(v))
                 .mirrored(cube.mirror())
                 .cuboid(
-                        cube.origin()[0] - px,
-                        py - cube.origin()[1] - cube.size()[1],
-                        cube.origin()[2] - pz,
-                        cube.size()[0], cube.size()[1], cube.size()[2],
-                        new Dilation(cube.inflate())
+                        cube.origin()[0] - px + halfFracX,
+                        py - cube.origin()[1] - sizeY + halfFracY,
+                        cube.origin()[2] - pz + halfFracZ,
+                        flooredX, flooredY, flooredZ,
+                        new Dilation(
+                                cube.inflate() + halfFracX,
+                                cube.inflate() + halfFracY,
+                                cube.inflate() + halfFracZ)
                 )
                 .mirrored(false);
     }
