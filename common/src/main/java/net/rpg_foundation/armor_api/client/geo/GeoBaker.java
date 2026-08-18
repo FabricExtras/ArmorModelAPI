@@ -228,6 +228,18 @@ public final class GeoBaker {
         float halfFracY = (sizeY - flooredY) / 2f;
         float halfFracZ = (sizeZ - flooredZ) / 2f;
 
+        // A cube that is exactly flat on an axis has its two opposing faces coplanar - and box
+        // UV gives them DIFFERENT texture regions, so with culling disabled (armor renders
+        // no-cull) they z-fight visibly. Fatten only the flat axis by a hair: the faces
+        // separate, each side keeps its own authored art, and the UV spans (driven by the
+        // floored size, not the dilation) don't move a texel. 2ε total ≈ 0.002 blocks -
+        // above the depth buffer's quantization at armor-viewing distances, far below
+        // anything the eye can measure. Non-flat cubes are untouched.
+        final float epsilon = 0.016f;
+        float flatX = sizeX == 0 ? epsilon : 0;
+        float flatY = sizeY == 0 ? epsilon : 0;
+        float flatZ = sizeZ == 0 ? epsilon : 0;
+
         builder.uv(Math.round(u), Math.round(v))
                 .mirrored(cube.mirror())
                 .cuboid(
@@ -236,9 +248,9 @@ public final class GeoBaker {
                         cube.origin()[2] - pz + halfFracZ,
                         flooredX, flooredY, flooredZ,
                         new Dilation(
-                                cube.inflate() + halfFracX,
-                                cube.inflate() + halfFracY,
-                                cube.inflate() + halfFracZ)
+                                cube.inflate() + halfFracX + flatX,
+                                cube.inflate() + halfFracY + flatY,
+                                cube.inflate() + halfFracZ + flatZ)
                 )
                 .mirrored(false);
     }
