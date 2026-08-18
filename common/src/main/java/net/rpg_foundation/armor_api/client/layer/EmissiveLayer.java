@@ -13,6 +13,7 @@ import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.ArmorRenderContext;
 import net.rpg_foundation.armor_api.client.ArmorRenderLayer;
 import net.rpg_foundation.armor_api.client.GeoModelCache;
+import net.rpg_foundation.armor_api.client.compatibility.ShaderCompat;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.InputStream;
@@ -21,7 +22,11 @@ import java.util.Map;
 import java.util.Optional;
 
 /// Glow pass: re-renders the model with the set's emissive texture on an emissive render layer
-/// at full brightness, drawn *over* the base pass (equal depth passes the depth test).
+/// at full brightness, drawn *over* the base pass (equal depth passes the depth test). The
+/// [Mode] picks the intensity: [Mode#GLOW] (the default) is the single fullbright pass;
+/// [Mode#RADIANT] swaps it for an opaque radiant fill plus an additive burn pass that drives
+/// the same pixels past the texel's own brightness - toward white under vanilla, and into a
+/// shader pack's bloom threshold under packs.
 ///
 /// The hand-authored `<baseTexture>_glowmask.png` is a **stencil**, not a picture: only its
 /// pixels' positions and alpha matter, the colors come from the base texture (AzureLib's
@@ -34,12 +39,26 @@ import java.util.Optional;
 /// The pass is skipped (once-logged) when the mask file doesn't exist, so the layer is safe to
 /// add unconditionally across a family of sets.
 ///
-/// Subclass hooks mirror what Armory's RadiantGlowLayer needs: [#renderLayer] to swap the
-/// render layer, [#render] to add passes around this one, [#emissiveTexture] to change how the
-/// texture is resolved.
+/// [#emissiveTexture] stays overridable for layers that resolve the glow texture differently.
 @Environment(EnvType.CLIENT)
 public class EmissiveLayer implements ArmorRenderLayer {
 
+    /// How hard the glow pixels are driven.
+    public enum Mode {
+        /// One translucent emissive pass at the texel's own brightness, fullbright in darkness.
+        GLOW,
+        /// Fill + additive burn, ported from Armory's RadiantGlowLayer/ArmoryGlowLayers (where
+        /// the config gating stays; this mode is the mechanism only). See [#gain].
+        RADIANT
+    }
+
+    /// How hard the [Mode#RADIANT] burn is driven (vanilla only); live-read every frame.
+    /// Above one it buys brightness as coverage - mid tones climb into the framebuffer clamp;
+    /// too far and the mask flattens white. One or below turns the burn pass off entirely.
+    /// Armory ships 2.5.
+    public static float gain = 2.5F;
+
+    private final Mode mode;
     private final @Nullable Identifier maskTexture; // null = derive from the renderer's base texture
 
     /// mask id → id of the baked composite texture (empty = missing/broken, logged once).
@@ -48,11 +67,29 @@ public class EmissiveLayer implements ArmorRenderLayer {
     private static int bakedCacheGeneration = -1;
 
     public EmissiveLayer() {
-        this.maskTexture = null;
+        this(Mode.GLOW, null);
+    }
+
+    public EmissiveLayer(Mode mode) {
+        this(mode, null);
     }
 
     public EmissiveLayer(Identifier maskTexture) {
+        this(Mode.GLOW, maskTexture);
+    }
+
+    public EmissiveLayer(Mode mode, @Nullable Identifier maskTexture) {
+        this.mode = mode;
         this.maskTexture = maskTexture;
+    }
+
+    /// Under a shader pack ([ShaderCompat#isShaderPackInUse]) the gain is forced to 1: Iris
+    /// folds shader color into `gl_Color` at the *start* of the pack's program, and a >1 texel
+    /// breaks every color test the pack runs (Lightbringer's yellow famously came back green).
+    /// At gain 1 the burn is a plain additive duplicate of the fill - which is all the
+    /// brightness a pack gets from it, and enough for its bloom to find.
+    public static float effectiveGain() {
+        return ShaderCompat.isShaderPackInUse() ? 1F : gain;
     }
 
     @Override
@@ -61,17 +98,29 @@ public class EmissiveLayer implements ArmorRenderLayer {
         if (glowTexture == null) {
             return;
         }
-        context.model().render(
-                context.matrices(),
-                context.vertexConsumers().getBuffer(renderLayer(context, glowTexture)),
-                LightmapTextureManager.MAX_LIGHT_COORDINATE,
-                OverlayTexture.DEFAULT_UV);
+        draw(context, mainRenderLayer(glowTexture));
+        if (mode == Mode.RADIANT && gain > 1F) {
+            // gain <= 1F is burn-off everywhere; under a pack, effectiveGain()'s 1 still
+            // draws the additive duplicate
+            draw(context, ArmorRenderLayers.radiantBurn(glowTexture));
+        }
     }
 
-    /// The emissive layer with armor view-offset layering - see [ArmorRenderLayers#emissive]
-    /// for why a plain `entityTranslucentEmissive` fails the depth test over an armor base pass.
-    protected RenderLayer renderLayer(ArmorRenderContext context, Identifier glowTexture) {
-        return ArmorRenderLayers.emissive(glowTexture);
+    /// Both layers carry armor view-offset layering - see [ArmorRenderLayers#emissive] for why
+    /// a plain `entityTranslucentEmissive` fails the depth test over an armor base pass.
+    private RenderLayer mainRenderLayer(Identifier glowTexture) {
+        return switch (mode) {
+            case GLOW -> ArmorRenderLayers.emissive(glowTexture);
+            case RADIANT -> ArmorRenderLayers.radiantFill(glowTexture);
+        };
+    }
+
+    private static void draw(ArmorRenderContext context, RenderLayer layer) {
+        context.model().render(
+                context.matrices(),
+                context.vertexConsumers().getBuffer(layer),
+                LightmapTextureManager.MAX_LIGHT_COORDINATE,
+                OverlayTexture.DEFAULT_UV);
     }
 
     /// The renderable glow texture (already composited), or null to skip the pass.

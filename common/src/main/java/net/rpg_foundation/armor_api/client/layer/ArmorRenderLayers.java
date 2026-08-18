@@ -58,7 +58,7 @@ public final class ArmorRenderLayers extends RenderLayer {
     // --- Radiant glow (fill + additive burn), ported from Armory's ArmoryGlowLayers ---------
     //
     // The fill draws the emissive pixels opaquely; the burn re-draws them additively with the
-    // shader color driven past one (RadiantEmissiveLayer#effectiveGain), which is the only
+    // shader color driven past one (EmissiveLayer#effectiveGain), which is the only
     // lever that climbs past the texel's own brightness and gives shader-pack bloom something
     // to find. Both carry VIEW_OFFSET_Z_LAYERING - Armory's originals didn't need it because
     // AzureLib punched glow pixels out of the base texture, so no base depth existed there;
@@ -99,7 +99,7 @@ public final class ArmorRenderLayers extends RenderLayer {
             () -> {
                 // getShaderColor hands out the live array, not a copy
                 System.arraycopy(RenderSystem.getShaderColor(), 0, SHADER_COLOR_TO_RESTORE, 0, 4);
-                float gain = RadiantEmissiveLayer.effectiveGain();
+                float gain = EmissiveLayer.effectiveGain();
                 RenderSystem.setShaderColor(gain, gain, gain, 1F);
             },
             () -> RenderSystem.setShaderColor(
