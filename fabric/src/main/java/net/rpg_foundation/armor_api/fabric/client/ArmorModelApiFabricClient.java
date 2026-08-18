@@ -23,6 +23,8 @@ public final class ArmorModelApiFabricClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
+        net.rpg_foundation.armor_api.client.compatibility.ShaderCompat.initialize();
+
         ArmorRenderers.setRegistrationListener((item, renderer) -> ArmorRenderer.register(
                 (matrices, vertexConsumers, stack, entity, slot, light, contextModel) ->
                         ArmorRenderDispatcher.render(matrices, vertexConsumers, stack, entity, slot, light, contextModel),

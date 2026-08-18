@@ -18,6 +18,7 @@ public final class ArmorModelApiNeoForge {
 
     public ArmorModelApiNeoForge(IEventBus modBus) {
         if (FMLEnvironment.dist == Dist.CLIENT) {
+            net.rpg_foundation.armor_api.client.compatibility.ShaderCompat.initialize();
             modBus.addListener(RegisterClientReloadListenersEvent.class, event ->
                     event.registerReloadListener((SynchronousResourceReloader) manager -> GeoModelCache.invalidate()));
             if (!FMLEnvironment.production) {

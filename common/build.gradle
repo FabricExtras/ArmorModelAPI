@@ -1,8 +1,15 @@
+loom {
+    accessWidenerPath = file("src/main/resources/armor_model_api.accesswidener")
+}
+
 architectury {
     common rootProject.enabled_platforms.split(',')
 }
 
 dependencies {
+    // Compile-only: ShaderCompat reaches IrisApi behind an isModLoaded gate
+    modCompileOnly("maven.modrinth:iris:${rootProject.iris_version}")
+
     // We depend on Fabric Loader here to use the Fabric @Environment annotations,
     // which get remapped to the correct annotations on each platform.
     // Do NOT use other classes from Fabric Loader.

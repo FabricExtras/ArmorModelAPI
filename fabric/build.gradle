@@ -2,6 +2,11 @@ plugins {
     id 'com.gradleup.shadow'
 }
 
+loom {
+    accessWidenerPath = project(":common").loom.accessWidenerPath
+}
+
+
 architectury {
     platformSetupLoomIde()
     fabric()
@@ -25,6 +30,9 @@ configurations {
 }
 
 dependencies {
+    // Compile-only: ShaderCompat reaches IrisApi behind an isModLoaded gate
+    modCompileOnly("maven.modrinth:iris:${rootProject.iris_version}")
+
     modImplementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
 
     // Fabric API. This is technically optional, but you probably want it anyway.
