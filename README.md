@@ -174,7 +174,7 @@ Layers are extra passes drawn **after** the base texture pass, in list order:
 
 ```java
 new GeoArmorRenderer(modelId, textureId, List.of(
-    new RadiantEmissiveLayer(),                                    // glow first,
+    new EmissiveLayer(Mode.RADIANT),                               // glow first,
     new TrimLayer(Identifier.of(MOD_ID, "armor/trim/crimson_generic"), false)))  // trim on top
 ```
 
@@ -185,16 +185,20 @@ Renders the vanilla trim component using **per-set trim textures** from the armo
 ```java
 new TrimLayer(baseTexture)          // sprite per pattern+material: <base>_<pattern>_<material>
 new TrimLayer(baseTexture, false)   // sprite per material only:    <base>_<material>
-new TrimLayer(trim -> customId)     // fully custom naming
+new TrimLayer(trim -> customId)     // fully custom naming (no fallback — unresolved trims skip)
+new TrimLayer(trim -> customId, fallbackId)  // custom naming + explicit fallback sprite
 ```
 
-The sprites come from vanilla's `paletted_permutations` atlas source — one greyscale trim texture per set, recolored per trim material automatically. Add the texture at `assets/<mod>/textures/armor/trim/<set>_generic.png` and an atlas entry:
+The sprites come from vanilla's `paletted_permutations` atlas source — one greyscale trim texture per set, recolored per trim material automatically. Add the texture at `assets/<mod>/textures/armor/trim/<set>_generic.png` and an atlas entry (the `single` source stitches the greyscale itself, for the fallback described below):
 
 ```json
 // assets/minecraft/atlases/armor_trims.json
 {
   "replace": false,
   "sources": [{
+    "type": "single",
+    "resource": "<mod>:armor/trim/<set>_generic"
+  }, {
     "type": "paletted_permutations",
     "textures": ["<mod>:armor/trim/<set>_generic"],
     "palette_key": "trims/color_palettes/trim_palette",
@@ -214,26 +218,30 @@ The sprites come from vanilla's `paletted_permutations` atlas source — one gre
 }
 ```
 
+**Third-party trim materials — greyscale fallback.** Mods can register new trim materials (with their own color palettes); a fixed `paletted_permutations` source generates no variant for materials it doesn't list, so those trims would resolve to the missing sprite. When that happens, `TrimLayer` falls back to the set's **greyscale base texture** — an uncolored trim instead of the magenta checker. The fallback needs the greyscale stitched into the atlas, which is what the `single` source above does. If the fallback sprite is missing too, the trim pass skips itself; both cases log once per resource reload. The base-texture constructors wire the fallback automatically; the custom-function constructor takes it as an optional second argument.
+
 ### EmissiveLayer — glowmask
 
 Pixels that stay fully bright in darkness. The mask is a **stencil**: `<baseTexture>_glowmask.png`, same size as the base texture, transparent everywhere except the pixels that should glow — only the mask's **alpha** matters; the glow **colors are taken from the base texture** underneath. (This is the established AzureLib-era convention; existing masks work unchanged.)
 
 ```java
-new EmissiveLayer()            // derives <base>_glowmask.png automatically
-new EmissiveLayer(explicitId)  // explicit mask texture
+new EmissiveLayer()                        // derives <base>_glowmask.png automatically (Mode.GLOW)
+new EmissiveLayer(explicitId)              // explicit mask texture
+new EmissiveLayer(Mode.RADIANT)            // radiant mode, see below
+new EmissiveLayer(Mode.RADIANT, explicitId)
 ```
 
 If the mask file doesn't exist, the pass skips itself (logged once) — safe to add across a whole family of sets.
 
-### RadiantEmissiveLayer — glow that burns
+### Mode.RADIANT — glow that burns
 
-The emissive pass plus an **additive burn** that drives the glow pixels past their own brightness — toward white under vanilla, and into a shader pack's bloom threshold under packs.
+The emissive pass plus an **additive burn** that drives the glow pixels past their own brightness — toward white under vanilla, and into a shader pack's bloom threshold under packs. Same mask convention as the default `Mode.GLOW`.
 
 ```java
-new RadiantEmissiveLayer()     // same mask convention as EmissiveLayer
+new EmissiveLayer(EmissiveLayer.Mode.RADIANT)
 ```
 
-- `RadiantEmissiveLayer.gain` (static, default `2.5`) controls how hard the burn is driven; `1` or below disables the burn pass. Live-tunable.
+- `EmissiveLayer.gain` (static, default `2.5`) controls how hard the burn is driven; `1` or below disables the burn pass. Live-tunable.
 - Under an active shader pack the gain is automatically clamped to a safe additive doubling (detected via Iris) — driving shader color past one inside a pack's programs corrupts its color math.
 
 ### Writing a custom layer
@@ -263,7 +271,7 @@ Two rules for any **custom `RenderLayer`** you build for armor (both learned the
 
 ## Compatibility notes
 
-- **Sodium / Iris** — supported. Rendering is vanilla `ModelPart` geometry on vanilla-style render layers, which is precisely what these mods optimize and translate. The radiant layer detects an active shader pack (via the Iris API, soft dependency) and adjusts its gain automatically.
+- **Sodium / Iris** — supported. Rendering is vanilla `ModelPart` geometry on vanilla-style render layers, which is precisely what these mods optimize and translate. The radiant mode detects an active shader pack (via the Iris API, soft dependency) and adjusts its gain automatically.
 - **Shoulder Surfing** — supported, including its player-transparency fade: the fade rides the vanilla color path, which this library's passes inherit. Its render-type modification (armor layers made translucent while the feature is on) is exactly why custom-layer rule 2 above exists.
 - **Other rendering mods** — the general contract: this library draws the base armor texture and then **overdraws** it with its layer passes (glow is layered *on top of* the base, the base texture is never modified). Mods that re-render, tint, or fade armor through the vanilla pipeline compose naturally; mods that reorder draws by render-state classification are handled by the layer rules above.
 
@@ -273,5 +281,5 @@ Two rules for any **custom `RenderLayer`** you build for armor (both learned the
 
 **License**: MIT. The armor bone-name convention and the reference math for anchoring Bedrock geometry to the vanilla skeleton derive from [AzureLib Armor](https://github.com/AzureDoom/AzureLib-Armor) (itself a GeckoLib fork), both MIT — see `NOTICE`. No source code from either project is included.
 
-**Dev smoke test**: `./gradlew :fabric:runClient` (or `:neoforge:runClient`) registers test renderers on vanilla armor in the dev environment only — iron: a plain example set; diamond: emissive glowmask; netherite: radiant glow; gold: waist-bone set. Wear a piece and compare against the source model in Blockbench.
+**Example mod / dev smoke test**: the `example/` modules are a separate, never-published mod (`armor_model_api_example`) consuming the API exactly like a real content mod — all test assets and registrations live there, keeping the API jar clean. `./gradlew :example-fabric:runClient` (or `:example-neoforge:runClient`) launches the game with the API loaded as a dependency mod and test renderers registered on vanilla armor — iron: a plain example set; diamond: emissive glowmask; netherite: radiant glow; gold: waist-bone set. Wear a piece and compare against the source model in Blockbench. `example/common/src/main/java/.../ExampleArmor.java` is the reference for consumer-side registration.
 

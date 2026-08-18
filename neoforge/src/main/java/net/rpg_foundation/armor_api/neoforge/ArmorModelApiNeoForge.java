@@ -8,7 +8,6 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.GeoModelCache;
-import net.rpg_foundation.armor_api.client.dev.DevTestArmor;
 
 /// The render hook itself is the ArmorFeatureRendererMixin; the entrypoint only wires the
 /// resource-reload invalidation. Renderer lookups go straight to the common registry, so
@@ -21,9 +20,6 @@ public final class ArmorModelApiNeoForge {
             net.rpg_foundation.armor_api.client.compatibility.ShaderCompat.initialize();
             modBus.addListener(RegisterClientReloadListenersEvent.class, event ->
                     event.registerReloadListener((SynchronousResourceReloader) manager -> GeoModelCache.invalidate()));
-            if (!FMLEnvironment.production) {
-                DevTestArmor.register();
-            }
         }
     }
 }

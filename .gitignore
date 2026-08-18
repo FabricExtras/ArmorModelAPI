@@ -120,3 +120,5 @@ forge/run/
 !gradle-wrapper.jar
 
 *.blend1
+# Copyright-protected assets (kept locally, never committed)
+copyright_*

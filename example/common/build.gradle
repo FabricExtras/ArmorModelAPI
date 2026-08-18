@@ -1,0 +1,18 @@
+architectury {
+    common rootProject.enabled_platforms.split(',')
+}
+
+dependencies {
+    // We depend on Fabric Loader here to use the Fabric @Environment annotations,
+    // which get remapped to the correct annotations on each platform.
+    // Do NOT use other classes from Fabric Loader.
+    modImplementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
+
+    // Compile against the API's common module. compileOnly on purpose: at runtime the API is
+    // present as a real mod (the platform modules' dev-shadow jar via localRuntime), and an
+    // implementation dep would put a duplicate loose copy of its classes on the classpath.
+    compileOnly(project(path: ':common', configuration: 'namedElements')) { transitive = false }
+}
+
+// Dev-only module — never publish.
+tasks.withType(AbstractPublishToMaven).configureEach { enabled = false }

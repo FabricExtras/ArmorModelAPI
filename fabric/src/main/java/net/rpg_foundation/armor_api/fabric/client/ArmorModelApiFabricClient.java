@@ -4,7 +4,6 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.ArmorRenderer;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.resource.ResourceType;
 import net.minecraft.util.Identifier;
@@ -12,7 +11,6 @@ import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.ArmorRenderDispatcher;
 import net.rpg_foundation.armor_api.client.ArmorRenderers;
 import net.rpg_foundation.armor_api.client.GeoModelCache;
-import net.rpg_foundation.armor_api.client.dev.DevTestArmor;
 
 /// Fabric side of the two platform bridges: every registration in [ArmorRenderers] is mirrored
 /// into Fabric API's own per-item ArmorRenderer registry (the sanctioned hook inside
@@ -42,9 +40,5 @@ public final class ArmorModelApiFabricClient implements ClientModInitializer {
                         GeoModelCache.invalidate();
                     }
                 });
-
-        if (FabricLoader.getInstance().isDevelopmentEnvironment()) {
-            DevTestArmor.register();
-        }
     }
 }

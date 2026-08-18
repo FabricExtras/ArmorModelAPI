@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "armor_model_api_example",
+  "version": "${version}",
+  "name": "Armor Model API Example",
+  "description": "Example consumer of the Armor Model API: renders custom geometry, glowmasks, radiant glow and trims on the vanilla armor sets.",
+  "authors": [
+    "ZsoltMolnarrr"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "net.rpg_foundation.armor_api.example.fabric.client.ExampleFabricClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "armor_model_api": "*"
+  }
+}
