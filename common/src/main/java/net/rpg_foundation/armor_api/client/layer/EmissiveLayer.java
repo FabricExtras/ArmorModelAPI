@@ -31,7 +31,8 @@ public class EmissiveLayer implements ArmorRenderLayer {
 
     private final @Nullable Identifier texture; // null = derive from the renderer's base texture
 
-    /// Cleared indirectly on resource reload via the generation stamp.
+    /// Cleared indirectly on resource reload via the generation stamp. Render thread only,
+    /// like all layer code - layers are invoked exclusively by the dispatcher mid-render.
     private static final Map<Identifier, Boolean> TEXTURE_EXISTS = new HashMap<>();
     private static int existsCacheGeneration = -1;
 

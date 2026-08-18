@@ -28,8 +28,12 @@ import java.util.Optional;
 public final class GeoModelCache {
 
     /// Optional.empty() = known failure; absent key = not attempted yet.
+    /// Guarded by the class lock; `generation` is volatile so a stamp read outside the lock
+    /// still sees reload bumps. In normal operation loads and invalidation both happen on the
+    /// render/main thread, but the lock makes the cache safe regardless of caller - NeoForge
+    /// runs mod init on a parallel dispatch pool, and this class must not care who calls when.
     private static final Map<Identifier, Optional<TexturedModelData>> TEMPLATES = new HashMap<>();
-    private static int generation = 0;
+    private static volatile int generation = 0;
 
     private GeoModelCache() { }
 
@@ -39,12 +43,12 @@ public final class GeoModelCache {
     }
 
     /// Called from the platform reload listeners.
-    public static void invalidate() {
+    public static synchronized void invalidate() {
         TEMPLATES.clear();
         generation++;
     }
 
-    public static @Nullable TexturedModelData get(Identifier modelId) {
+    public static synchronized @Nullable TexturedModelData get(Identifier modelId) {
         return TEMPLATES.computeIfAbsent(modelId, GeoModelCache::load).orElse(null);
     }
 

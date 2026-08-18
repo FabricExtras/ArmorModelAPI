@@ -88,18 +88,32 @@ public final class GeoBaker {
             ));
         }
 
+        // Bones referencing a parent that isn't in the file are top-level: armor templates
+        // exported from Blockbench often parent armorX bones to the implicit vanilla skeleton
+        // (bipedHead, bipedBody, ...) without declaring those bones. AzureLib resolved these
+        // the same way.
+        var boneNames = new java.util.HashSet<String>();
+        for (var bone : model.bones()) {
+            boneNames.add(bone.name());
+        }
         var childrenByParent = new HashMap<String, java.util.List<GeoModel.GeoBone>>();
         for (var bone : model.bones()) {
-            if (bone.parent() != null) {
+            if (bone.parent() != null && boneNames.contains(bone.parent())) {
                 childrenByParent.computeIfAbsent(bone.parent(), key -> new java.util.ArrayList<>()).add(bone);
             }
         }
 
         for (var bone : model.bones()) {
-            if (bone.parent() != null) {
+            if (bone.parent() != null && boneNames.contains(bone.parent())) {
                 continue;
             }
+            // The bone's own conventional name decides its standard part; for a bone that is
+            // only top-level because its declared parent is implicit (e.g. a decorative bone
+            // parented to 'bipedBody'), the parent's conventional name decides instead.
             var partName = PART_BY_TOP_LEVEL_BONE.get(bone.name());
+            if (partName == null && bone.parent() != null) {
+                partName = PART_BY_TOP_LEVEL_BONE.get(bone.parent());
+            }
             if (partName == null) {
                 ArmorModelApi.LOGGER.warn(
                         "Geo model '{}': top-level bone '{}' matches no armor bone convention; it will not be posed or rendered",

@@ -12,6 +12,7 @@ import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.ArmorRenderDispatcher;
 import net.rpg_foundation.armor_api.client.ArmorRenderers;
 import net.rpg_foundation.armor_api.client.GeoModelCache;
+import net.rpg_foundation.armor_api.client.dev.DevTestArmor;
 
 /// Fabric side of the two platform bridges: every registration in [ArmorRenderers] is mirrored
 /// into Fabric API's own per-item ArmorRenderer registry (the sanctioned hook inside

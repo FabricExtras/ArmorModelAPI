@@ -39,6 +39,10 @@ public class GeoArmorRenderer {
     }
 
     /// Null while the geo model is missing or broken (logged by the cache).
+    ///
+    /// Render thread only: the cached instance and its generation stamp are deliberately
+    /// unsynchronized, and the returned model is shared mutable state (pose, visibility)
+    /// that only means anything mid-render. Registration threads have no business here.
     public @Nullable GeoArmorModel model() {
         int currentGeneration = GeoModelCache.generation();
         if (model == null || modelGeneration != currentGeneration) {
