@@ -63,5 +63,5 @@ remapJar {
     inputFile.set shadowJar.archiveFile
 }
 
-// Dev-only module — never publish.
+// Dev-only module — never publish (maven-publish; the mod-publish-plugin is not applied here).
 tasks.withType(AbstractPublishToMaven).configureEach { enabled = false }
