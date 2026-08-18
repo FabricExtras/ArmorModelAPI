@@ -57,7 +57,11 @@ public final class GeoBaker {
             Map.entry("armorRightBoot", EntityModelPartNames.RIGHT_LEG),
             Map.entry("bipedLeftLeg", EntityModelPartNames.LEFT_LEG),
             Map.entry("armorLeftLeg", EntityModelPartNames.LEFT_LEG),
-            Map.entry("armorLeftBoot", EntityModelPartNames.LEFT_LEG)
+            Map.entry("armorLeftBoot", EntityModelPartNames.LEFT_LEG),
+            // Waist: extra geometry shown with the LEGS piece but anchored to (posed by) the
+            // chest - skirts, tassets, belts. Authored with pivot (0, 24, 0), the body anchor.
+            Map.entry("bipedWaist", EntityModelPartNames.BODY),
+            Map.entry("armorWaist", EntityModelPartNames.BODY)
     );
 
     /// Vanilla biped part pivots in vanilla space - must match `BipedEntityModel.getModelData`,

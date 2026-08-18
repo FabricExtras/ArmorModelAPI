@@ -27,6 +27,7 @@ public class GeoArmorModel extends BipedEntityModel<LivingEntity> {
     private final @Nullable ModelPart armorLeftLeg;
     private final @Nullable ModelPart armorRightBoot;
     private final @Nullable ModelPart armorLeftBoot;
+    private final @Nullable ModelPart armorWaist;
 
     public GeoArmorModel(ModelPart root) {
         super(root);
@@ -38,6 +39,7 @@ public class GeoArmorModel extends BipedEntityModel<LivingEntity> {
         this.armorLeftLeg = findPart(root, "armorLeftLeg");
         this.armorRightBoot = findPart(root, "armorRightBoot");
         this.armorLeftBoot = findPart(root, "armorLeftBoot");
+        this.armorWaist = findPart(root, "armorWaist");
     }
 
     /// Shows exactly the armor bones belonging to `slot` and hides the other conventional
@@ -53,6 +55,9 @@ public class GeoArmorModel extends BipedEntityModel<LivingEntity> {
         setArmorBoneVisible(armorLeftLeg, slot == EquipmentSlot.LEGS);
         setArmorBoneVisible(armorRightBoot, slot == EquipmentSlot.FEET);
         setArmorBoneVisible(armorLeftBoot, slot == EquipmentSlot.FEET);
+        // Waist geometry ships with the LEGS piece but hangs off the body part, so it follows
+        // torso pose (sneak/swim pitch) rather than a leg's swing.
+        setArmorBoneVisible(armorWaist, slot == EquipmentSlot.LEGS);
     }
 
     /// The conventional bone part, for layers that want a single-bone pass. Null when the
@@ -67,6 +72,7 @@ public class GeoArmorModel extends BipedEntityModel<LivingEntity> {
             case "armorLeftLeg" -> armorLeftLeg;
             case "armorRightBoot" -> armorRightBoot;
             case "armorLeftBoot" -> armorLeftBoot;
+            case "armorWaist" -> armorWaist;
             default -> null;
         };
     }
