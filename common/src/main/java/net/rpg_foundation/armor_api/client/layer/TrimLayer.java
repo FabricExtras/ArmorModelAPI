@@ -76,6 +76,11 @@ public class TrimLayer implements ArmorRenderLayer {
     }
 
     @Override
+    public int preferredOrder() {
+        return ORDER_TRIM;
+    }
+
+    @Override
     public void render(ArmorRenderContext context) {
         var trim = context.stack().get(DataComponentTypes.TRIM);
         if (trim == null) {

@@ -16,7 +16,7 @@ Renders armor with **custom geometry** authored in the Bedrock/GeckoLib `.geo.js
 
 - **Loading** — on resource load (and every F3+T reload), each registered `.geo.json` is parsed and baked **once** into a vanilla `ModelPart` tree (the same `TexturedModelData` every vanilla entity model is built from), cached until the next reload. Textures are plain resources, resolved by the render layers on demand — nothing is preprocessed.
 - **Hooking in** — when an armor piece is about to render, the library steps in per registered item: on Fabric through Fabric API's `ArmorRenderer` hook, on NeoForge through a small equivalent mixin. Vanilla's overlay rendering is skipped for that piece and the dispatcher renders the baked model instead — vanilla pose copied on, slot visibility applied. Unregistered items are untouched.
-- **Pass order** — each piece draws as a stack of passes over the same model: **base texture → your render layers in list order** (typically glow, then trim so it lands on top), with enchantment glint riding the base pass. Every extra pass is just the model rendered again with a different render layer and buffer.
+- **Pass order** — each piece draws as a stack of passes over the same model: **base texture → your render layers** (glow, then trim so it lands on top), with enchantment glint riding the base pass. Renderers built through the fluent API keep the layers sorted into that stack automatically; a renderer constructed with an explicit layer list draws them in list order (see [Render layers](#render-layers)). Every extra pass is just the model rendered again with a different render layer and buffer.
 
 From bake to buffer this is 100% the vanilla code path — the same pose copy, render layers, and buffers vanilla armor uses. That is the whole compatibility and performance story: Sodium, Iris, and anything else that works with vanilla armor sees ordinary vanilla model rendering. There is no custom vertex pipeline.
 
@@ -107,10 +107,9 @@ import net.rpg_foundation.armor_api.client.ArmorRenderers;
 import net.rpg_foundation.armor_api.client.GeoArmorRenderer;
 
 ArmorRenderers.register(
-    new GeoArmorRenderer(
+    GeoArmorRenderer.of(
         Identifier.of(MOD_ID, "geo/crimson_plate.geo.json"),
-        Identifier.of(MOD_ID, "textures/armor/crimson_plate.png"),
-        List.of()),                                    // render layers, in draw order
+        Identifier.of(MOD_ID, "textures/armor/crimson_plate.png")),
     MyItems.CRIMSON_HELMET, MyItems.CRIMSON_CHESTPLATE,
     MyItems.CRIMSON_LEGGINGS, MyItems.CRIMSON_BOOTS);
 ```
@@ -170,7 +169,19 @@ A model that fails to load logs once and the set falls back as described in Quic
 
 ## Render layers
 
-Layers are extra passes drawn **after** the base texture pass, in list order:
+Layers are extra passes drawn **after** the base texture pass. There are two ways to add them, with different ordering contracts:
+
+**Fluent API (recommended) — smart ordering.** `GeoArmorRenderer.of(...)` plus the pass methods `.glow()` / `.radiant()` / `.trim(...)` / `.layer(...)`. The chain keeps the passes sorted into the visually-correct stack — glow under trim under custom overlays — no matter what order you chain the calls in:
+
+```java
+GeoArmorRenderer.of(modelId, textureId)
+    .radiant()                                                          // emissive glow
+    .trim(Identifier.of(MOD_ID, "armor/trim/crimson_generic"), false);  // trim, sorted on top
+```
+
+Sorting follows `ArmorRenderLayer.preferredOrder()`: `ORDER_EMISSIVE` (100) → `ORDER_TRIM` (200) → `ORDER_OVERLAY` (300, the default for custom layers). The sort is stable — layers sharing an order keep the order they were added. Each pass method returns a **new** renderer, so finish the chain before registering it.
+
+**Explicit layer list — full manual control.** The plain constructor takes the layers exactly as listed and draws them **in list order**, no sorting — use it when you need a stack the sorted order can't express:
 
 ```java
 new GeoArmorRenderer(modelId, textureId, List.of(
@@ -259,6 +270,8 @@ public class EnchantOverlayLayer implements ArmorRenderLayer {
 ```
 
 A pass is just: pick a `RenderLayer`, get a buffer, call `model.render` again. The context carries the posed model (slot visibility already applied), the buffers, stack, entity, slot, and light. `ctx.model().armorBone("armorHead")` gives you a single conventional bone for per-bone passes.
+
+Added via the fluent `.layer(...)`, a custom pass sorts at `ORDER_OVERLAY` — on top of the built-in glow and trim passes. Override `preferredOrder()` to sit elsewhere in the sorted stack (e.g. below `ORDER_EMISSIVE` for an underlay), or use the explicit-list constructor to place it by hand (the list ignores `preferredOrder()` entirely).
 
 Two rules for any **custom `RenderLayer`** you build for armor (both learned the hard way — vanilla's own armor layers already follow them):
 

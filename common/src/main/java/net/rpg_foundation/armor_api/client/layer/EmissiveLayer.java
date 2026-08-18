@@ -93,6 +93,11 @@ public class EmissiveLayer implements ArmorRenderLayer {
     }
 
     @Override
+    public int preferredOrder() {
+        return ORDER_EMISSIVE;
+    }
+
+    @Override
     public void render(ArmorRenderContext context) {
         var glowTexture = emissiveTexture(context);
         if (glowTexture == null) {
