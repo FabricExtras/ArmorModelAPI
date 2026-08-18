@@ -6,7 +6,7 @@ license = "MIT"
 modId = "armor_model_api_example"
 version = "${version}"
 displayName = "Armor Model API Example"
-authors = "ZsoltMolnarrr"
+authors = "Daedelus"
 description = '''
 Example consumer of the Armor Model API: renders custom geometry, glowmasks, radiant glow and trims on the vanilla armor sets.
 '''

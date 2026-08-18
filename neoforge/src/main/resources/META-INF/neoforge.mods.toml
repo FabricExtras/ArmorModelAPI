@@ -6,7 +6,7 @@ license = "MIT"
 modId = "armor_model_api"
 version = "${version}"
 displayName = "Armor Model API"
-authors = "ZsoltMolnarrr"
+authors = "Daedelus"
 description = '''
 Renders Bedrock/GeckoLib geo armor models through the vanilla armor pipeline.
 '''

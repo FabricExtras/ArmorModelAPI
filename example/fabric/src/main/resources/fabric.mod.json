@@ -5,7 +5,7 @@
   "name": "Armor Model API Example",
   "description": "Example consumer of the Armor Model API: renders custom geometry, glowmasks, radiant glow and trims on the vanilla armor sets.",
   "authors": [
-    "ZsoltMolnarrr"
+    "Daedelus"
   ],
   "contact": {},
   "license": "MIT",
