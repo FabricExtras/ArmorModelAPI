@@ -8,7 +8,7 @@ version = "${version}"
 displayName = "Armor Model API"
 authors = "ZsoltMolnarrr"
 description = '''
-Renders armor with custom geometry authored in the Bedrock/GeckoLib geo format, through the vanilla armor rendering pipeline.
+Renders Bedrock/GeckoLib geo armor models through the vanilla armor pipeline.
 '''
 
 [[dependencies.armor_model_api]]
