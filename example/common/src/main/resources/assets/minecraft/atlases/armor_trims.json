@@ -4,12 +4,14 @@
     { "type": "single", "resource": "armor_model_api_example:armor/trim/dev_test_generic" },
     { "type": "single", "resource": "armor_model_api_example:armor/trim/copyright_justicar_armor_generic" },
     { "type": "single", "resource": "armor_model_api_example:armor/trim/copyright_lightbringer_armor_generic" },
+    { "type": "single", "resource": "armor_model_api_example:armor/trim/copyright_wizard_robe_generic" },
     {
       "type": "paletted_permutations",
       "textures": [
         "armor_model_api_example:armor/trim/dev_test_generic",
         "armor_model_api_example:armor/trim/copyright_justicar_armor_generic",
-        "armor_model_api_example:armor/trim/copyright_lightbringer_armor_generic"
+        "armor_model_api_example:armor/trim/copyright_lightbringer_armor_generic",
+        "armor_model_api_example:armor/trim/copyright_wizard_robe_generic"
       ],
       "palette_key": "trims/color_palettes/trim_palette",
       "permutations": {

@@ -9,6 +9,7 @@
   ],
   "contact": {},
   "license": "MIT",
+  "icon": "assets/armor_model_api/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -24,5 +25,10 @@
     "java": ">=21",
     "fabric-rendering-v1": "*",
     "fabric-resource-loader-v0": "*"
+  },
+  "custom": {
+    "modmenu": {
+      "badges": [ "library" ]
+    }
   }
 }

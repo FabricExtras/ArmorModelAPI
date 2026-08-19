@@ -25,15 +25,18 @@ import java.util.List;
 /// - **Gold** — spellblade set: the `armorWaist` bone (skirt/tassets shown with the LEGS
 ///   piece, anchored to the chest). Gold leggings alone must render the waist following torso
 ///   pose; gold chestplate alone must NOT show it.
+/// - **Chainmail** — wizard robe set: cloth geometry on a 64x64 atlas, where every other set
+///   here is 128x128, so it covers `texture_width`/`texture_height` being honoured per model
+///   rather than assumed.
 ///
 /// Trim test: trim any piece at a smithing table, or:
 ///   /give @p iron_chestplate[trim={material:"minecraft:redstone",pattern:"minecraft:sentry"}]
 /// (patterns are ignored - material-only permutations, like the Wizards sets). A trim material
 /// added by a third-party mod exercises TrimLayer's greyscale fallback.
 ///
-/// The `copyright_`-prefixed assets (justicar/lightbringer/spellblade sets) are
+/// The `copyright_`-prefixed assets (justicar/lightbringer/spellblade/wizard-robe sets) are
 /// copyright-protected and gitignored - present only on machines that have them locally. In a
-/// fresh clone those three registrations log a missing-geo error once and fall back
+/// fresh clone those registrations log a missing-geo error once and fall back
 /// gracefully; only the license-free iron dev_test set renders.
 @Environment(EnvType.CLIENT)
 public final class ExampleArmor {
@@ -75,5 +78,14 @@ public final class ExampleArmor {
                         Identifier.of(ExampleArmorMod.MOD_ID, "textures/armor/copyright_spellblade_armor.png"),
                         List.of(new EmissiveLayer())), // no glowmask → skip-guard path
                 Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS);
+
+        ArmorRenderers.register(
+                new GeoArmorRenderer(
+                        Identifier.of(ExampleArmorMod.MOD_ID, "geo/copyright_wizard_robes.geo.json"),
+                        Identifier.of(ExampleArmorMod.MOD_ID, "textures/armor/copyright_wizard_robe.png"),
+                        List.of(
+                                new EmissiveLayer(), // no glowmask → skip-guard path
+                                new TrimLayer(Identifier.of(ExampleArmorMod.MOD_ID, "armor/trim/copyright_wizard_robe_generic"), false))),
+                Items.CHAINMAIL_HELMET, Items.CHAINMAIL_CHESTPLATE, Items.CHAINMAIL_LEGGINGS, Items.CHAINMAIL_BOOTS);
     }
 }

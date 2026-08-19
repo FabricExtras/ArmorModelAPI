@@ -7,6 +7,7 @@ modId = "armor_model_api"
 version = "${version}"
 displayName = "Armor Model API"
 authors = "Daedelus"
+logoFile = "assets/armor_model_api/icon.png"
 description = '''
 Renders Bedrock/GeckoLib geo armor models through the vanilla armor pipeline.
 '''
