@@ -1,6 +1,6 @@
 # Armor Model API
 
-Renders armor with **custom geometry** authored in the Bedrock/GeckoLib `.geo.json` format, through the **vanilla armor rendering pipeline**. For Minecraft **1.21.1**, on **Fabric** and **NeoForge**.
+Renders armor with **custom geometry** authored in the Bedrock/GeckoLib `.geo.json` format, through the **vanilla armor rendering pipeline**.
 
 ## Capabilities
 
