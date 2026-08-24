@@ -34,7 +34,7 @@ configurations {
 
 dependencies {
     // Compile-only: ShaderCompat reaches IrisApi behind an isModLoaded gate
-    modCompileOnly("maven.modrinth:iris:${rootProject.iris_version}")
+    modCompileOnly("maven.modrinth:iris:${rootProject.iris_version}-fabric")
 
     modImplementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
 
@@ -60,6 +60,7 @@ shadowJar {
 
 remapJar {
     inputFile.set shadowJar.archiveFile
+    injectAccessWidener = true
 }
 
 // Publishing setup copied from the Wizards mod. Configured unconditionally: tasks only *run*

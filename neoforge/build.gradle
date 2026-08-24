@@ -41,7 +41,7 @@ repositories {
 
 dependencies {
     // Compile-only: ShaderCompat reaches IrisApi behind an isModLoaded gate
-    modCompileOnly("maven.modrinth:iris:${rootProject.iris_version}")
+    modCompileOnly("maven.modrinth:iris:${rootProject.iris_version}-neoforge")
 
     neoForge "net.neoforged:neoforge:$rootProject.neoforge_version"
 
@@ -64,6 +64,7 @@ shadowJar {
 
 remapJar {
     inputFile.set shadowJar.archiveFile
+    atAccessWideners.add("armor_model_api.accesswidener")
 }
 
 // Publishing setup copied from the Wizards mod. Configured unconditionally: tasks only *run*

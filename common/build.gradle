@@ -8,7 +8,7 @@ architectury {
 
 dependencies {
     // Compile-only: ShaderCompat reaches IrisApi behind an isModLoaded gate
-    modCompileOnly("maven.modrinth:iris:${rootProject.iris_version}")
+    modCompileOnly("maven.modrinth:iris:${rootProject.iris_version}-fabric")
 
     // We depend on Fabric Loader here to use the Fabric @Environment annotations,
     // which get remapped to the correct annotations on each platform.
