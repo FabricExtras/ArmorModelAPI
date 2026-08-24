@@ -1,11 +1,12 @@
 package net.rpg_foundation.armor_api.neoforge;
 
 import net.minecraft.resource.SynchronousResourceReloader;
+import net.minecraft.util.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.GeoModelCache;
 
@@ -16,10 +17,12 @@ import net.rpg_foundation.armor_api.client.GeoModelCache;
 public final class ArmorModelApiNeoForge {
 
     public ArmorModelApiNeoForge(IEventBus modBus) {
-        if (FMLEnvironment.dist == Dist.CLIENT) {
+        if (FMLEnvironment.getDist() == Dist.CLIENT) {
             net.rpg_foundation.armor_api.client.compatibility.ShaderCompat.initialize();
-            modBus.addListener(RegisterClientReloadListenersEvent.class, event ->
-                    event.registerReloadListener((SynchronousResourceReloader) manager -> GeoModelCache.invalidate()));
+            modBus.addListener(AddClientReloadListenersEvent.class, event ->
+                    event.addListener(
+                            Identifier.of(ArmorModelApi.MOD_ID, "geo_models"),
+                            (SynchronousResourceReloader) manager -> GeoModelCache.invalidate()));
         }
     }
 }

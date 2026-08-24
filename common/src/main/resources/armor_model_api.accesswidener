@@ -1,5 +1,6 @@
 accessWidener	v2	named
-# Custom render layer construction (ArmorRenderLayers): RenderLayer.of and its MultiPhase
-# return type are package-private in yarn; same widening SpellEngine uses for its layers.
-accessible    class    net/minecraft/client/render/RenderLayer$MultiPhase
-accessible    method    net/minecraft/client/render/RenderLayer    of    (Ljava/lang/String;Lnet/minecraft/client/render/VertexFormat;Lnet/minecraft/client/render/VertexFormat$DrawMode;IZZLnet/minecraft/client/render/RenderLayer$MultiPhaseParameters;)Lnet/minecraft/client/render/RenderLayer$MultiPhase;
+# Custom render layer construction (ArmorRenderLayers): RenderLayer.of is package-private in
+# yarn; same widening SpellEngine uses for its layers. The emissive pipeline snippet is the
+# base of the radiant fill/burn pipelines.
+accessible	method	net/minecraft/client/render/RenderLayer	of	(Ljava/lang/String;Lnet/minecraft/client/render/RenderSetup;)Lnet/minecraft/client/render/RenderLayer;
+accessible	field	net/minecraft/client/gl/RenderPipelines	ENTITY_EMISSIVE_SNIPPET	Lcom/mojang/blaze3d/pipeline/RenderPipeline$Snippet;

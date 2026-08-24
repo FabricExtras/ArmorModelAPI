@@ -2,7 +2,8 @@ package net.rpg_foundation.armor_api.client;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.item.trim.ArmorTrim;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.equipment.trim.ArmorTrim;
 import net.minecraft.util.Identifier;
 import net.rpg_foundation.armor_api.client.layer.EmissiveLayer;
 import net.rpg_foundation.armor_api.client.layer.TrimLayer;
@@ -11,7 +12,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /// One renderer per visual armor set: which geo model, which base texture, which extra passes.
@@ -49,7 +52,9 @@ public class GeoArmorRenderer {
     ) { }
 
     private final Config config;
-    private @Nullable GeoArmorModel model;
+    /// One model per slot: rendering is queued and drawn later, so the slot visibility cannot
+    /// be flipped on a shared instance between submissions.
+    private final Map<EquipmentSlot, GeoArmorModel> models = new EnumMap<>(EquipmentSlot.class);
     private int modelGeneration = -1;
 
     public GeoArmorRenderer(Identifier modelId, Identifier texture, List<ArmorRenderLayer> layers) {
@@ -134,18 +139,27 @@ public class GeoArmorRenderer {
         return config;
     }
 
-    /// Null while the geo model is missing or broken (logged by the cache).
+    /// The model for the given slot, with that slot's bone visibility applied; null while the
+    /// geo model is missing or broken (logged by the cache).
     ///
-    /// Render thread only: the cached instance and its generation stamp are deliberately
+    /// Render thread only: the cached instances and their generation stamp are deliberately
     /// unsynchronized, and the returned model is shared mutable state (pose, visibility)
     /// that only means anything mid-render. Registration threads have no business here.
-    public @Nullable GeoArmorModel model() {
+    public @Nullable GeoArmorModel model(EquipmentSlot slot) {
         int currentGeneration = GeoModelCache.generation();
-        if (model == null || modelGeneration != currentGeneration) {
-            var template = GeoModelCache.get(config.modelId());
-            model = template != null ? new GeoArmorModel(template.createModel()) : null;
+        if (modelGeneration != currentGeneration) {
+            models.clear();
             modelGeneration = currentGeneration;
         }
-        return model;
+        if (!models.containsKey(slot)) {
+            var template = GeoModelCache.get(config.modelId());
+            GeoArmorModel model = null;
+            if (template != null) {
+                model = new GeoArmorModel(template.createModel());
+                model.applySlotVisibility(slot);
+            }
+            models.put(slot, model);
+        }
+        return models.get(slot);
     }
 }

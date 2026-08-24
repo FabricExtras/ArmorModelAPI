@@ -17,7 +17,7 @@ import java.util.Map;
 /// Bakes a parsed [GeoModel] into a vanilla `TexturedModelData` whose root carries the seven
 /// standard biped parts (head, hat, body, right_arm, left_arm, right_leg, left_leg) at their
 /// vanilla pivots, with the geo bones attached underneath by the armor bone-name convention.
-/// Vanilla pose copy (`copyBipedStateTo`) then animates the standard parts and everything
+/// Vanilla posing (`setAngles` from the render state) then animates the standard parts and everything
 /// below follows - no custom render code anywhere.
 ///
 /// ## Coordinate conversion
@@ -88,7 +88,7 @@ public final class GeoBaker {
             standardParts.put(entry.getKey(), root.addChild(
                     entry.getKey(),
                     ModelPartBuilder.create(),
-                    ModelTransform.pivot(pivot[0], pivot[1], pivot[2])
+                    ModelTransform.origin(pivot[0], pivot[1], pivot[2])
             ));
         }
 

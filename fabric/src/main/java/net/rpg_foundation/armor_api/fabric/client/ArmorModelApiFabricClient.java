@@ -2,10 +2,9 @@ package net.rpg_foundation.armor_api.fabric.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.ArmorRenderer;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
-import net.minecraft.resource.ResourceManager;
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.minecraft.resource.ResourceType;
+import net.minecraft.resource.SynchronousResourceReloader;
 import net.minecraft.util.Identifier;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.ArmorRenderDispatcher;
@@ -24,21 +23,12 @@ public final class ArmorModelApiFabricClient implements ClientModInitializer {
         net.rpg_foundation.armor_api.client.compatibility.ShaderCompat.initialize();
 
         ArmorRenderers.setRegistrationListener((item, renderer) -> ArmorRenderer.register(
-                (matrices, vertexConsumers, stack, entity, slot, light, contextModel) ->
-                        ArmorRenderDispatcher.render(matrices, vertexConsumers, stack, entity, slot, light, contextModel),
+                (ArmorRenderer) (matrices, queue, stack, state, slot, light, contextModel) ->
+                        ArmorRenderDispatcher.render(matrices, queue, stack, state, slot, light, contextModel),
                 item));
 
-        ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES)
-                .registerReloadListener(new SimpleSynchronousResourceReloadListener() {
-                    @Override
-                    public Identifier getFabricId() {
-                        return Identifier.of(ArmorModelApi.MOD_ID, "geo_models");
-                    }
-
-                    @Override
-                    public void reload(ResourceManager manager) {
-                        GeoModelCache.invalidate();
-                    }
-                });
+        ResourceLoader.get(ResourceType.CLIENT_RESOURCES).registerReloader(
+                Identifier.of(ArmorModelApi.MOD_ID, "geo_models"),
+                (SynchronousResourceReloader) manager -> GeoModelCache.invalidate());
     }
 }

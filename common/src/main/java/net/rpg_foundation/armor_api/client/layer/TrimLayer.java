@@ -3,14 +3,13 @@ package net.rpg_foundation.armor_api.client.layer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.TexturedRenderLayers;
-import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.texture.MissingSprite;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
 import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.trim.ArmorTrim;
+import net.minecraft.item.equipment.trim.ArmorTrim;
+import net.minecraft.util.Atlases;
 import net.minecraft.util.Identifier;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.ArmorRenderContext;
@@ -58,11 +57,11 @@ public class TrimLayer implements ArmorRenderLayer {
     public TrimLayer(Identifier baseTexture, boolean supportPatterns) {
         this(supportPatterns
                 ? trim -> {
-                    var patternName = trim.getPattern().value().assetId().getPath();
-                    var materialName = trim.getMaterial().value().assetName();
+                    var patternName = trim.pattern().value().assetId().getPath();
+                    var materialName = trim.material().value().assets().base().suffix();
                     return baseTexture.withSuffixedPath("_" + patternName + "_" + materialName);
                 }
-                : trim -> baseTexture.withSuffixedPath("_" + trim.getMaterial().value().assetName()),
+                : trim -> baseTexture.withSuffixedPath("_" + trim.material().value().assets().base().suffix()),
                 baseTexture);
     }
 
@@ -86,17 +85,14 @@ public class TrimLayer implements ArmorRenderLayer {
         if (trim == null) {
             return;
         }
-        var atlas = MinecraftClient.getInstance().getBakedModelManager()
-                .getAtlas(TexturedRenderLayers.ARMOR_TRIMS_ATLAS_TEXTURE);
+        var atlas = MinecraftClient.getInstance().getAtlasManager().getAtlasTexture(Atlases.ARMOR_TRIMS);
         var sprite = resolveSprite(atlas, trim);
         if (sprite == null) {
             return;
         }
-        var consumer = sprite.getTextureSpecificVertexConsumer(ItemRenderer.getArmorGlintConsumer(
-                context.vertexConsumers(),
-                TexturedRenderLayers.getArmorTrims(trim.getPattern().value().decal()),
-                context.stack().hasGlint()));
-        context.model().render(context.matrices(), consumer, context.light(), OverlayTexture.DEFAULT_UV);
+        // Like vanilla's EquipmentRenderer the glint is a base-pass thing (drawn by the
+        // dispatcher); the trim itself is submitted plain, UV-remapped onto its atlas sprite.
+        context.submit(TexturedRenderLayers.getArmorTrims(trim.pattern().value().decal()), context.light(), -1, sprite);
     }
 
     /// The sprite for the item's trim; the greyscale fallback when the permutation isn't in

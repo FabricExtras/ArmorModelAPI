@@ -10,7 +10,7 @@ import net.rpg_foundation.armor_api.example.ExampleArmorMod;
 public final class ExampleNeoForge {
 
     public ExampleNeoForge() {
-        if (FMLEnvironment.dist == Dist.CLIENT) {
+        if (FMLEnvironment.getDist() == Dist.CLIENT) {
             ExampleArmor.register();
         }
     }

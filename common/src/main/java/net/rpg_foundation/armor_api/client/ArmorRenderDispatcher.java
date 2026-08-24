@@ -2,27 +2,24 @@ package net.rpg_foundation.armor_api.client;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.VertexConsumerProvider;
+import net.minecraft.client.render.RenderLayers;
+import net.minecraft.client.render.command.OrderedRenderCommandQueue;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
-import net.minecraft.client.render.item.ItemRenderer;
+import net.minecraft.client.render.entity.state.BipedEntityRenderState;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.DyedColorComponent;
 import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.util.math.ColorHelper;
 
 /// The one armor render routine, shared verbatim by both platform hooks. Runs inside the
 /// entity feature-render pass, replacing vanilla's `renderArmor` body for registered items:
 ///
-/// 1. pose copy from the entity's posed context model (vanilla would do this too)
-/// 2. slot visibility (incl. the FEET → boot bones mapping vanilla can't express)
-/// 3. base pass - armor cutout render layer, dye color, glint via the armor foil buffer
-/// 4. the renderer's extra layers (trim, glow, ...), each a plain re-render with its own buffer
+/// 1. the per-slot model (slot visibility baked in, incl. the FEET → boot bones mapping
+///    vanilla can't express); the vanilla pose is applied at draw time from the render state
+/// 2. base pass - armor cutout render layer, dye color, then the armor glint pass
+/// 3. the renderer's extra layers (trim, glow, ...), each a plain re-submit with its own layer
 ///
 /// Returns false when nothing was rendered (unregistered item, wrong slot, missing model) so
 /// the NeoForge mixin can leave vanilla rendering untouched in that case.
@@ -33,12 +30,12 @@ public final class ArmorRenderDispatcher {
 
     public static boolean render(
             MatrixStack matrices,
-            VertexConsumerProvider vertexConsumers,
+            OrderedRenderCommandQueue queue,
             ItemStack stack,
-            LivingEntity entity,
+            BipedEntityRenderState state,
             EquipmentSlot slot,
             int light,
-            BipedEntityModel<LivingEntity> contextModel
+            BipedEntityModel<BipedEntityRenderState> contextModel
     ) {
         var renderer = ArmorRenderers.get(stack.getItem());
         if (renderer == null) {
@@ -46,27 +43,23 @@ public final class ArmorRenderDispatcher {
         }
         // Vanilla's own guard runs after the hook point, so it is replicated here: a chestplate
         // held in the head slot must not render as armor.
-        if (!(stack.getItem() instanceof ArmorItem armorItem) || armorItem.getSlotType() != slot) {
+        var equippable = stack.get(DataComponentTypes.EQUIPPABLE);
+        if (equippable == null || equippable.slot() != slot) {
             return false;
         }
-        var model = renderer.model();
+        var model = renderer.model(slot);
         if (model == null) {
             return false; // missing/broken geo asset, already logged by the cache
         }
 
-        contextModel.copyBipedStateTo(model);
-        model.applySlotVisibility(slot);
-
         int color = stack.isIn(ItemTags.DYEABLE)
-                ? ColorHelper.Argb.fullAlpha(DyedColorComponent.getColor(stack, DyedColorComponent.DEFAULT_COLOR))
+                ? DyedColorComponent.getColor(stack, DyedColorComponent.DEFAULT_COLOR)
                 : -1;
-        var consumer = ItemRenderer.getArmorGlintConsumer(
-                vertexConsumers,
-                RenderLayer.getArmorCutoutNoCull(renderer.config().texture()),
-                stack.hasGlint());
-        model.render(matrices, consumer, light, OverlayTexture.DEFAULT_UV, color);
-
-        var context = new ArmorRenderContext(matrices, vertexConsumers, stack, entity, slot, light, renderer, model);
+        var context = new ArmorRenderContext(matrices, queue, stack, state, slot, light, renderer, model);
+        context.submit(RenderLayers.armorCutoutNoCull(renderer.config().texture()), light, color, null);
+        if (stack.hasGlint()) {
+            context.submit(RenderLayers.armorEntityGlint(), light, color, null);
+        }
         for (var layer : renderer.config().layers()) {
             layer.render(context);
         }

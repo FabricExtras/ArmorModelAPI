@@ -5,17 +5,18 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.client.render.entity.state.BipedEntityRenderState;
 import org.jetbrains.annotations.Nullable;
 
 /// A real `BipedEntityModel` whose standard parts carry baked geo armor bones as children.
-/// Everything vanilla does with a biped armor model - pose copy via `copyBipedStateTo`,
-/// baby scaling, render passes with any buffer - works on it unchanged.
+/// Everything vanilla does with a biped armor model - posing from the entity render state via
+/// `setAngles`, render passes on any render layer - works on it unchanged.
 ///
-/// One instance per [net.rpg_foundation.armor_api.client.GeoArmorRenderer], mutated freely on
-/// the render thread: the dispatcher rewrites pose and visibility at the start of every render.
+/// One instance per slot per [net.rpg_foundation.armor_api.client.GeoArmorRenderer]: the slot
+/// visibility is applied once at creation, the pose is (re)applied by the render command queue
+/// right before each draw.
 @Environment(EnvType.CLIENT)
-public class GeoArmorModel extends BipedEntityModel<LivingEntity> {
+public class GeoArmorModel extends BipedEntityModel<BipedEntityRenderState> {
 
     // Conventional armor bones, resolved by name anywhere under the standard parts.
     // Null when the geo model doesn't have the bone (e.g. robes without boot bones).
@@ -84,7 +85,7 @@ public class GeoArmorModel extends BipedEntityModel<LivingEntity> {
     }
 
     private static @Nullable ModelPart findPart(ModelPart root, String name) {
-        return root.traverse()
+        return root.traverse().stream()
                 .filter(part -> part.hasChild(name))
                 .map(part -> part.getChild(name))
                 .findFirst()
