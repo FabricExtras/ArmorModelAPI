@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /// Bakes a parsed [GeoModel] into a vanilla `TexturedModelData` whose root carries the seven
-/// standard biped parts (head, hat, body, right_arm, left_arm, right_leg, left_leg) at their
+/// standard biped parts (head with its hat child, body, right_arm, left_arm, right_leg, left_leg) at their
 /// vanilla pivots, with the geo bones attached underneath by the armor bone-name convention.
 /// Vanilla posing (`setAngles` from the render state) then animates the standard parts and everything
 /// below follows - no custom render code anywhere.
@@ -84,6 +84,9 @@ public final class GeoBaker {
 
         var standardParts = new HashMap<String, ModelPartData>();
         for (var entry : STANDARD_PART_PIVOTS.entrySet()) {
+            if (entry.getKey().equals(EntityModelPartNames.HAT)) {
+                continue; // nested under head below, where BipedEntityModel looks for it since 1.21.11
+            }
             var pivot = entry.getValue();
             standardParts.put(entry.getKey(), root.addChild(
                     entry.getKey(),
@@ -91,6 +94,12 @@ public final class GeoBaker {
                     ModelTransform.origin(pivot[0], pivot[1], pivot[2])
             ));
         }
+        // Since 1.21.11 `BipedEntityModel(ModelPart)` resolves `hat` as a CHILD of `head`
+        // (`head.getChild("hat")`), not of the root - a root-level hat throws
+        // "Can't find part hat" at construction. Same pivot as head (0,0,0), so the geo bones
+        // attach and pose exactly as before.
+        standardParts.put(EntityModelPartNames.HAT, standardParts.get(EntityModelPartNames.HEAD)
+                .addChild(EntityModelPartNames.HAT, ModelPartBuilder.create(), ModelTransform.NONE));
 
         // Bones referencing a parent that isn't in the file are top-level: armor templates
         // exported from Blockbench often parent armorX bones to the implicit vanilla skeleton
