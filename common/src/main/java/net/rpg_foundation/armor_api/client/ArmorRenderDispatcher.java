@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.client;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.command.OrderedRenderCommandQueue;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
@@ -23,7 +21,6 @@ import net.minecraft.registry.tag.ItemTags;
 ///
 /// Returns false when nothing was rendered (unregistered item, wrong slot, missing model) so
 /// the NeoForge mixin can leave vanilla rendering untouched in that case.
-@Environment(EnvType.CLIENT)
 public final class ArmorRenderDispatcher {
 
     private ArmorRenderDispatcher() { }

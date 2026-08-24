@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.example;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.item.Items;
 import net.minecraft.util.Identifier;
 import net.rpg_foundation.armor_api.client.ArmorRenderers;
@@ -38,7 +36,6 @@ import java.util.List;
 /// copyright-protected and gitignored - present only on machines that have them locally. In a
 /// fresh clone those registrations log a missing-geo error once and fall back
 /// gracefully; only the license-free iron dev_test set renders.
-@Environment(EnvType.CLIENT)
 public final class ExampleArmor {
 
     private ExampleArmor() { }

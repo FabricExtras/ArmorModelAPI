@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.client.model;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.model.ModelPart;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 import net.minecraft.entity.EquipmentSlot;
@@ -15,7 +13,6 @@ import org.jetbrains.annotations.Nullable;
 /// One instance per slot per [net.rpg_foundation.armor_api.client.GeoArmorRenderer]: the slot
 /// visibility is applied once at creation, the pose is (re)applied by the render command queue
 /// right before each draw.
-@Environment(EnvType.CLIENT)
 public class GeoArmorModel extends BipedEntityModel<BipedEntityRenderState> {
 
     // Conventional armor bones, resolved by name anywhere under the standard parts.

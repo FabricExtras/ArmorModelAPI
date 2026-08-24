@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.client;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.equipment.trim.ArmorTrim;
 import net.minecraft.util.Identifier;
@@ -42,7 +40,6 @@ import java.util.function.Function;
 /// callers who want full manual control of the stack. Because each call returns a new renderer,
 /// finish the chain before registering it - a pass added to a value you already registered is on
 /// a copy, not the registered renderer.
-@Environment(EnvType.CLIENT)
 public class GeoArmorRenderer {
 
     public record Config(

@@ -2,8 +2,6 @@ package net.rpg_foundation.armor_api.client.layer;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.render.LayeringTransform;
 import net.minecraft.client.render.RenderLayer;
@@ -17,7 +15,6 @@ import java.util.function.Function;
 /// Custom render layers for armor passes. Since 1.21.11 a render layer is a public
 /// `RenderSetup` over a `RenderPipeline` (which owns blend/depth/cull state), so no access
 /// widener is needed any more; the pipelines are compiled on first use.
-@Environment(EnvType.CLIENT)
 public final class ArmorRenderLayers {
 
     private ArmorRenderLayers() { }

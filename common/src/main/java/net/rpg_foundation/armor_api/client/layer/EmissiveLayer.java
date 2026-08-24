@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.client.layer;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.LightmapTextureManager;
 import net.minecraft.client.render.RenderLayer;
@@ -40,7 +38,6 @@ import java.util.Optional;
 /// add unconditionally across a family of sets.
 ///
 /// [#emissiveTexture] stays overridable for layers that resolve the glow texture differently.
-@Environment(EnvType.CLIENT)
 public class EmissiveLayer implements ArmorRenderLayer {
 
     /// How hard the glow pixels are driven.

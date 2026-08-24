@@ -3,8 +3,6 @@ package net.rpg_foundation.armor_api.client.geo;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +12,6 @@ import java.util.List;
 /// Deliberately strict: anything outside the supported subset (per-face UV objects, poly meshes,
 /// bone-level mirror/inflate) throws a [GeoParseException] naming the file and bone, so a broken
 /// or unsupported asset fails loudly at load instead of rendering garbage.
-@Environment(EnvType.CLIENT)
 public final class GeoParser {
 
     public static class GeoParseException extends RuntimeException {

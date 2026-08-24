@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.client.layer;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.TexturedRenderLayers;
 import net.minecraft.client.texture.MissingSprite;
@@ -39,7 +37,6 @@ import java.util.function.Function;
 /// into the armor-trims atlas with a `single` source next to the `paletted_permutations`
 /// entry (see the README's atlas example). If the fallback isn't in the atlas either, the
 /// pass is skipped. Both cases are logged once per resource reload.
-@Environment(EnvType.CLIENT)
 public class TrimLayer implements ArmorRenderLayer {
 
     private final Function<ArmorTrim, Identifier> texturePermutations;

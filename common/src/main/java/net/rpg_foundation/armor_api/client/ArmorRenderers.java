@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.client;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemConvertible;
 import net.rpg_foundation.armor_api.ArmorModelApi;
@@ -28,7 +26,6 @@ import java.util.function.BiConsumer;
 /// the Fabric bridge mirrors every entry into Fabric API's own ArmorRenderer registry via
 /// [#setRegistrationListener] (existing entries are replayed, so bridge and content-mod
 /// init order doesn't matter).
-@Environment(EnvType.CLIENT)
 public final class ArmorRenderers {
 
     /// Immutable snapshot, replaced wholesale by writers. Identity keying: items are

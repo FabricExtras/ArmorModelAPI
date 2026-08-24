@@ -2,8 +2,6 @@ package net.rpg_foundation.armor_api.client;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.model.TexturedModelData;
 import net.minecraft.util.Identifier;
@@ -24,7 +22,6 @@ import java.util.Optional;
 ///
 /// A model that fails to load is cached as a miss (logged once); its items render nothing
 /// until the next reload. Failures are asset bugs, not user-recoverable states.
-@Environment(EnvType.CLIENT)
 public final class GeoModelCache {
 
     /// Optional.empty() = known failure; absent key = not attempted yet.

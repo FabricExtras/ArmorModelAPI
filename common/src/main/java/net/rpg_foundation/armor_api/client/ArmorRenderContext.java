@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.client;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.render.OverlayTexture;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.command.OrderedRenderCommandQueue;
@@ -21,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 /// [#submit] with its render layer; passes are assigned ascending batching-queue orders in
 /// submission order, so the visual stack (base, glow, trim, ...) holds regardless of how the
 /// backend batches them. The [#model] already carries the slot visibility.
-@Environment(EnvType.CLIENT)
 public final class ArmorRenderContext {
     private final MatrixStack matrices;
     private final OrderedRenderCommandQueue queue;

@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.client.geo;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.minecraft.client.model.Dilation;
 import net.minecraft.client.model.ModelData;
 import net.minecraft.client.model.ModelPartBuilder;
@@ -37,7 +35,6 @@ import java.util.Map;
 ///
 /// Rotated cubes get a synthesized wrapper part (vanilla cuboids cannot rotate); box UV and
 /// per-cube mirror map 1:1 onto `ModelPartBuilder`; inflate maps onto `Dilation`.
-@Environment(EnvType.CLIENT)
 public final class GeoBaker {
 
     /// Conventional armor bone name → the standard biped part it attaches under.

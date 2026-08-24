@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.client;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 
 /// An extra render pass over an armor piece (trim, glow, enchant effect, ...), run after the
 /// base pass.
@@ -14,7 +12,6 @@ import net.fabricmc.api.Environment;
 /// calls were chained in. Custom layers default to [#ORDER_OVERLAY] (on top of the built-ins);
 /// override [#preferredOrder] to sit elsewhere. Renderers constructed with an explicit layer
 /// list are NOT sorted - the list draws exactly as given.
-@Environment(EnvType.CLIENT)
 @FunctionalInterface
 public interface ArmorRenderLayer {
 

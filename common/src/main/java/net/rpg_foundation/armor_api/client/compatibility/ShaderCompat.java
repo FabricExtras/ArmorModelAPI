@@ -1,7 +1,5 @@
 package net.rpg_foundation.armor_api.client.compatibility;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 import net.irisshaders.iris.api.v0.IrisApi;
 import net.rpg_foundation.armor_api.Platform;
 
@@ -13,7 +11,6 @@ import java.util.function.Supplier;
 /// isModLoaded gate, so its absence at runtime is safe.
 ///
 /// [#initialize] is called once from each platform client entrypoint.
-@Environment(EnvType.CLIENT)
 public final class ShaderCompat {
 
     private static Supplier<Boolean> shaderPackInUse = () -> false;
