@@ -6,6 +6,7 @@ import net.minecraft.util.Identifier;
 import net.rpg_foundation.armor_api.client.layer.EmissiveLayer;
 import net.rpg_foundation.armor_api.client.layer.TrimLayer;
 import net.rpg_foundation.armor_api.client.model.GeoArmorModel;
+import net.rpg_foundation.armor_api.client.model.GeoPlayerArmorModel;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -52,6 +53,7 @@ public class GeoArmorRenderer {
     /// One model per slot: rendering is queued and drawn later, so the slot visibility cannot
     /// be flipped on a shared instance between submissions.
     private final Map<EquipmentSlot, GeoArmorModel> models = new EnumMap<>(EquipmentSlot.class);
+    private final Map<EquipmentSlot, GeoPlayerArmorModel> playerModels = new EnumMap<>(EquipmentSlot.class);
     private int modelGeneration = -1;
 
     public GeoArmorRenderer(Identifier modelId, Identifier texture, List<ArmorRenderLayer> layers) {
@@ -143,11 +145,7 @@ public class GeoArmorRenderer {
     /// unsynchronized, and the returned model is shared mutable state (pose, visibility)
     /// that only means anything mid-render. Registration threads have no business here.
     public @Nullable GeoArmorModel model(EquipmentSlot slot) {
-        int currentGeneration = GeoModelCache.generation();
-        if (modelGeneration != currentGeneration) {
-            models.clear();
-            modelGeneration = currentGeneration;
-        }
+        refreshGeneration();
         if (!models.containsKey(slot)) {
             var template = GeoModelCache.get(config.modelId());
             GeoArmorModel model = null;
@@ -158,5 +156,30 @@ public class GeoArmorRenderer {
             models.put(slot, model);
         }
         return models.get(slot);
+    }
+
+    /// The player-state variant (a `PlayerEntityModel`, so player animation libraries pose it);
+    /// same caching rules as [#model].
+    public @Nullable GeoPlayerArmorModel playerModel(EquipmentSlot slot) {
+        refreshGeneration();
+        if (!playerModels.containsKey(slot)) {
+            var template = GeoModelCache.get(config.modelId());
+            GeoPlayerArmorModel model = null;
+            if (template != null) {
+                model = new GeoPlayerArmorModel(template.createModel());
+                model.applySlotVisibility(slot);
+            }
+            playerModels.put(slot, model);
+        }
+        return playerModels.get(slot);
+    }
+
+    private void refreshGeneration() {
+        int currentGeneration = GeoModelCache.generation();
+        if (modelGeneration != currentGeneration) {
+            models.clear();
+            playerModels.clear();
+            modelGeneration = currentGeneration;
+        }
     }
 }

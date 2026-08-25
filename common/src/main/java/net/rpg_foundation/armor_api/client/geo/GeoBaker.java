@@ -97,6 +97,13 @@ public final class GeoBaker {
         // attach and pose exactly as before.
         standardParts.put(EntityModelPartNames.HAT, standardParts.get(EntityModelPartNames.HEAD)
                 .addChild(EntityModelPartNames.HAT, ModelPartBuilder.create(), ModelTransform.NONE));
+        // `PlayerEntityModel(root, thinArms)` (used for players, see GeoPlayerArmorModel) additionally
+        // requires the skin-overlay parts; empty, same pivots as their parents.
+        standardParts.get(EntityModelPartNames.BODY).addChild("jacket", ModelPartBuilder.create(), ModelTransform.NONE);
+        standardParts.get(EntityModelPartNames.LEFT_ARM).addChild("left_sleeve", ModelPartBuilder.create(), ModelTransform.NONE);
+        standardParts.get(EntityModelPartNames.RIGHT_ARM).addChild("right_sleeve", ModelPartBuilder.create(), ModelTransform.NONE);
+        standardParts.get(EntityModelPartNames.LEFT_LEG).addChild("left_pants", ModelPartBuilder.create(), ModelTransform.NONE);
+        standardParts.get(EntityModelPartNames.RIGHT_LEG).addChild("right_pants", ModelPartBuilder.create(), ModelTransform.NONE);
 
         // Bones referencing a parent that isn't in the file are top-level: armor templates
         // exported from Blockbench often parent armorX bones to the implicit vanilla skeleton

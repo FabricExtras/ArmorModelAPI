@@ -8,7 +8,7 @@ import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
-import net.rpg_foundation.armor_api.client.model.GeoArmorModel;
+import net.rpg_foundation.armor_api.client.model.GeoArmorBones;
 import org.jetbrains.annotations.Nullable;
 
 /// Everything a render layer needs for its passes.
@@ -27,7 +27,7 @@ public final class ArmorRenderContext {
     private final EquipmentSlot slot;
     private final int light;
     private final GeoArmorRenderer renderer;
-    private final GeoArmorModel model;
+    private final GeoArmorBones model;
     private int nextOrder;
 
     public ArmorRenderContext(
@@ -38,7 +38,7 @@ public final class ArmorRenderContext {
             EquipmentSlot slot,
             int light,
             GeoArmorRenderer renderer,
-            GeoArmorModel model
+            GeoArmorBones model
     ) {
         this.matrices = matrices;
         this.queue = queue;
@@ -57,15 +57,17 @@ public final class ArmorRenderContext {
     public EquipmentSlot slot() { return slot; }
     public int light() { return light; }
     public GeoArmorRenderer renderer() { return renderer; }
-    public GeoArmorModel model() { return model; }
+    /// The armor model ([GeoArmorModel] for bipeds, [GeoPlayerArmorModel] for players); also a `BipedEntityModel`
+    public GeoArmorBones model() { return model; }
 
     /// Submits one full re-render of the model on the given render layer, after every pass
     /// submitted so far.
     ///
     /// @param color  ARGB tint, `-1` for none
     /// @param sprite atlas sprite to remap the model's UVs onto, or null to sample the layer's texture
+    @SuppressWarnings("unchecked")
     public void submit(RenderLayer layer, int light, int color, @Nullable Sprite sprite) {
         queue.getBatchingQueue(nextOrder++)
-                .submitModel(model, state, matrices, layer, light, OverlayTexture.DEFAULT_UV, color, sprite, state.outlineColor, null);
+                .submitModel((net.minecraft.client.render.entity.model.EntityModel<BipedEntityRenderState>) (net.minecraft.client.model.Model<?>) model, state, matrices, layer, light, OverlayTexture.DEFAULT_UV, color, sprite, state.outlineColor, null);
     }
 }

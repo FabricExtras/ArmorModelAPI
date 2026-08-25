@@ -4,6 +4,7 @@ import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.command.OrderedRenderCommandQueue;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 import net.minecraft.client.render.entity.state.BipedEntityRenderState;
+import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.DyedColorComponent;
@@ -44,7 +45,8 @@ public final class ArmorRenderDispatcher {
         if (equippable == null || equippable.slot() != slot) {
             return false;
         }
-        var model = renderer.model(slot);
+        // Players need the PlayerEntityModel variant so player-animation libraries pose the armor too
+        var model = state instanceof PlayerEntityRenderState ? renderer.playerModel(slot) : renderer.model(slot);
         if (model == null) {
             return false; // missing/broken geo asset, already logged by the cache
         }
