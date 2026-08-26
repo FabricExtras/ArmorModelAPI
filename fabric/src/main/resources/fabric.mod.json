@@ -21,7 +21,7 @@
   },
   "depends": {
     "fabricloader": ">=0.19.3",
-    "minecraft": "~1.21.11",
+    "minecraft": ">=${minecraft_min_version}",
     "java": ">=21",
     "fabric-rendering-v1": "*",
     "fabric-resource-loader-v1": "*"
