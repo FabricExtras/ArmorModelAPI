@@ -1,4 +1,4 @@
-accessWidener	v2	named
+accessWidener	v2	official
 # Custom render type construction (ArmorRenderLayers): RenderType.create is package-private;
 # same widening SpellEngine uses for its layers. The emissive pipeline snippet is the
 # base of the radiant fill/burn pipelines.

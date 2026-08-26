@@ -38,13 +38,13 @@ def apiShadowJar = rootProject.project(':neoforge').tasks.named('shadowJar')
 dependencies {
     neoForge "net.neoforged:neoforge:$rootProject.neoforge_version"
 
-    common(project(path: ':example-common', configuration: 'namedElements')) { transitive = false }
+    common(project(path: ':example-common')) { transitive = false }
     shadowBundle project(path: ':example-common', configuration: 'transformProductionNeoForge')
 
     // Compile against the API (compileOnly: see example/common/build.gradle)...
-    compileOnly(project(path: ':common', configuration: 'namedElements')) { transitive = false }
+    compileOnly(project(path: ':common')) { transitive = false }
 
-    // ...and RUN with the API as a real, self-contained mod via its dev-shadow jar.
+    // ...and RUN with the API as a real, self-contained mod via its shadow jar.
     localRuntime files(apiShadowJar.flatMap { it.archiveFile })
 }
 
@@ -58,14 +58,17 @@ processResources {
     }
 }
 
-shadowJar {
-    configurations = [project.configurations.shadowBundle]
-    archiveClassifier = 'dev-shadow'
+// No remapJar on 26.1+: the shaded jar is the mod jar.
+jar {
+    archiveClassifier = 'dev'
 }
 
-remapJar {
-    inputFile.set shadowJar.archiveFile
+shadowJar {
+    configurations = [project.configurations.shadowBundle]
+    archiveClassifier = null
 }
+
+assemble.dependsOn shadowJar
 
 // Dev-only module — never publish.
 tasks.withType(AbstractPublishToMaven).configureEach { enabled = false }

@@ -15,7 +15,7 @@ Renders Bedrock/GeckoLib geo armor models through the vanilla armor pipeline.
 [[dependencies.armor_model_api]]
 modId = "neoforge"
 type = "required"
-versionRange = "[21.11,)"
+versionRange = "[26.1,)"
 ordering = "NONE"
 side = "BOTH"
 

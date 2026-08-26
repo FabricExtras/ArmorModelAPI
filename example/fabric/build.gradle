@@ -29,16 +29,16 @@ evaluationDependsOn(':fabric')
 def apiShadowJar = rootProject.project(':fabric').tasks.named('shadowJar')
 
 dependencies {
-    modImplementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
+    implementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
+    implementation "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
 
-    common(project(path: ':example-common', configuration: 'namedElements')) { transitive = false }
+    common(project(path: ':example-common')) { transitive = false }
     shadowBundle project(path: ':example-common', configuration: 'transformProductionFabric')
 
     // Compile against the API (compileOnly: see example/common/build.gradle)...
-    compileOnly(project(path: ':common', configuration: 'namedElements')) { transitive = false }
+    compileOnly(project(path: ':common')) { transitive = false }
 
-    // ...and RUN with the API as a real, self-contained mod: the dev-shadow jar bundles
+    // ...and RUN with the API as a real, self-contained mod: the shadow jar bundles
     // :common into :fabric (fabric.mod.json + access widener + classes in one classpath
     // entry, which is what the dev mod discovery needs).
     localRuntime files(apiShadowJar.flatMap { it.archiveFile })
@@ -54,14 +54,17 @@ processResources {
     }
 }
 
-shadowJar {
-    configurations = [project.configurations.shadowBundle]
-    archiveClassifier = 'dev-shadow'
+// No remapJar on 26.1+: the shaded jar is the mod jar.
+jar {
+    archiveClassifier = 'dev'
 }
 
-remapJar {
-    inputFile.set shadowJar.archiveFile
+shadowJar {
+    configurations = [project.configurations.shadowBundle]
+    archiveClassifier = null
 }
+
+assemble.dependsOn shadowJar
 
 // Dev-only module — never publish (maven-publish; the mod-publish-plugin is not applied here).
 tasks.withType(AbstractPublishToMaven).configureEach { enabled = false }

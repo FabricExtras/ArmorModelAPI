@@ -34,14 +34,14 @@ configurations {
 
 dependencies {
     // Compile-only: ShaderCompat reaches IrisApi behind an isModLoaded gate
-    modCompileOnly("maven.modrinth:iris:${rootProject.iris_version}-fabric")
+    compileOnly("maven.modrinth:iris:${rootProject.iris_version}-fabric")
 
-    modImplementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
+    implementation "net.fabricmc:fabric-loader:$rootProject.fabric_loader_version"
 
     // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
+    implementation "net.fabricmc.fabric-api:fabric-api:$rootProject.fabric_api_version"
 
-    common(project(path: ':common', configuration: 'namedElements')) { transitive = false }
+    common(project(path: ':common')) { transitive = false }
     shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
 }
 
@@ -54,15 +54,33 @@ processResources {
     }
 }
 
-shadowJar {
-    configurations = [project.configurations.shadowBundle]
-    archiveClassifier = 'dev-shadow'
+// Minecraft is not obfuscated on this version, so there is no remapJar task.
+// The shaded jar is the mod jar that ships.
+jar {
+    archiveClassifier = 'dev'
 }
 
-remapJar {
-    inputFile.set shadowJar.archiveFile
-    injectAccessWidener = true
+shadowJar {
+    configurations = [project.configurations.shadowBundle]
+    archiveClassifier = null
 }
+
+assemble.dependsOn shadowJar
+
+configurations {
+    apiElements {
+        outgoing.artifacts.clear()
+        outgoing.artifact(shadowJar)
+    }
+    runtimeElements {
+        outgoing.artifacts.clear()
+        outgoing.artifact(shadowJar)
+    }
+}
+
+// Access widener: inject the AW file + the `accessWidener` key into the shipped (shaded) jar's
+// fabric.mod.json. Without this Loader never reads the AW in production (LESSONS 1.15).
+loom.injectAccessWidener(tasks.named('shadowJar'))
 
 // Publishing setup copied from the Wizards mod. Configured unconditionally: tasks only *run*
 // when explicitly invoked (e.g. `publishMod` in CI), and all credentials are lazy env
@@ -77,7 +95,7 @@ tasks.register("publishMod") {
 }
 
 publishMods {
-    file = remapJar.archiveFile          // Loom production jar (NOT the dev-shadow jar)
+    file = shadowJar.archiveFile         // the shaded jar is the production jar on 26.1+
     changelog = providers.provider { changelog_last_section() }   // lazy: read only at publish
     type = releaseTypeName == "release" ? me.modmuss50.mpp.ReleaseType.STABLE
             : releaseTypeName == "alpha" ? me.modmuss50.mpp.ReleaseType.ALPHA
