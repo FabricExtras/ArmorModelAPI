@@ -1,3 +1,9 @@
+# 1.0.2
+
+- 1.21.11 support
+- Player armor uses a `PlayerEntityModel`-based geo model, so player animation libraries (PAL) pose it
+- Fix `GeoArmorModel` construction (missing biped parts)
+
 # 1.0.0
 
 Initial release.
