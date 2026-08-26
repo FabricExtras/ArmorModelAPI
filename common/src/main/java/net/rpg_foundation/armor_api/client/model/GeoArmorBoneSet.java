@@ -1,7 +1,7 @@
 package net.rpg_foundation.armor_api.client.model;
 
-import net.minecraft.client.model.ModelPart;
-import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.world.entity.EquipmentSlot;
 import org.jetbrains.annotations.Nullable;
 
 /// Resolves and toggles the conventional armor bones under a baked root; shared by the model classes.
@@ -70,7 +70,7 @@ final class GeoArmorBoneSet implements GeoArmorBones {
     }
 
     private static @Nullable ModelPart findPart(ModelPart root, String name) {
-        return root.traverse().stream()
+        return root.getAllParts().stream()
                 .filter(part -> part.hasChild(name))
                 .map(part -> part.getChild(name))
                 .findFirst()

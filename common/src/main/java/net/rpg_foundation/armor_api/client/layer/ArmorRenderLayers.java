@@ -2,11 +2,11 @@ package net.rpg_foundation.armor_api.client.layer;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.render.LayeringTransform;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderSetup;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.rendertype.LayeringTransform;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 
@@ -25,17 +25,17 @@ public final class ArmorRenderLayers {
     /// *behind* the base pass's offset depth - and fails the depth test everywhere (glow
     /// invisible in world, flickering in the tiny inventory viewport where the offset is
     /// sub-precision). Any layer drawn over an armor base pass must carry the same layering.
-    private static final Function<Identifier, RenderLayer> EMISSIVE = Util.memoize(texture ->
-            RenderLayer.of(
+    private static final Function<Identifier, RenderType> EMISSIVE = Util.memoize(texture ->
+            RenderType.create(
                     "armor_model_api_emissive",
                     RenderSetup.builder(RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE)
-                            .texture("Sampler0", texture)
+                            .withTexture("Sampler0", texture)
                             .useOverlay()
-                            .translucent()
-                            .layeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
-                            .build()));
+                            .sortOnUpload()
+                            .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
+                            .createRenderSetup()));
 
-    public static RenderLayer emissive(Identifier texture) {
+    public static RenderType emissive(Identifier texture) {
         return EMISSIVE.apply(texture);
     }
 
@@ -56,7 +56,7 @@ public final class ArmorRenderLayers {
     /// depth test has an anchor. Translucent-classified on purpose (see EmissiveLayer): it
     /// must stay in the same sorting bucket as the (possibly SS-translucent) base pass.
     private static final RenderPipeline RADIANT_FILL_PIPELINE = RenderPipeline.builder(RenderPipelines.ENTITY_EMISSIVE_SNIPPET)
-            .withLocation(Identifier.of(ArmorModelApi.MOD_ID, "pipeline/radiant_fill"))
+            .withLocation(Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID, "pipeline/radiant_fill"))
             .withShaderDefine("ALPHA_CUTOUT", 0.1F)
             .withShaderDefine("PER_FACE_LIGHTING")
             .withSampler("Sampler1")
@@ -68,7 +68,7 @@ public final class ArmorRenderLayers {
     /// Additive burn over the fill; writes no depth - the fill already did, at the same
     /// coordinates, and this only adds light to what is there.
     private static final RenderPipeline RADIANT_BURN_PIPELINE = RenderPipeline.builder(RenderPipelines.ENTITY_EMISSIVE_SNIPPET)
-            .withLocation(Identifier.of(ArmorModelApi.MOD_ID, "pipeline/radiant_burn"))
+            .withLocation(Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID, "pipeline/radiant_burn"))
             .withShaderDefine("ALPHA_CUTOUT", 0.1F)
             .withShaderDefine("PER_FACE_LIGHTING")
             .withSampler("Sampler1")
@@ -77,33 +77,33 @@ public final class ArmorRenderLayers {
             .withDepthWrite(false)
             .build();
 
-    private static final Function<Identifier, RenderLayer> RADIANT_FILL = Util.memoize(texture ->
-            RenderLayer.of(
+    private static final Function<Identifier, RenderType> RADIANT_FILL = Util.memoize(texture ->
+            RenderType.create(
                     "armor_model_api_radiant_fill",
                     RenderSetup.builder(RADIANT_FILL_PIPELINE)
-                            .texture("Sampler0", texture)
+                            .withTexture("Sampler0", texture)
                             .useOverlay()
-                            .translucent()
-                            .layeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
-                            .build()));
+                            .sortOnUpload()
+                            .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
+                            .createRenderSetup()));
 
-    private static final Function<Identifier, RenderLayer> RADIANT_BURN = Util.memoize(texture ->
-            RenderLayer.of(
+    private static final Function<Identifier, RenderType> RADIANT_BURN = Util.memoize(texture ->
+            RenderType.create(
                     "armor_model_api_radiant_burn",
                     RenderSetup.builder(RADIANT_BURN_PIPELINE)
-                            .texture("Sampler0", texture)
+                            .withTexture("Sampler0", texture)
                             .useOverlay()
-                            .translucent()
-                            .layeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
-                            .build()));
+                            .sortOnUpload()
+                            .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
+                            .createRenderSetup()));
 
     /// @param emissiveTexture the composited glow texture, not the base armor texture
-    public static RenderLayer radiantFill(Identifier emissiveTexture) {
+    public static RenderType radiantFill(Identifier emissiveTexture) {
         return RADIANT_FILL.apply(emissiveTexture);
     }
 
     /// @param emissiveTexture the composited glow texture, not the base armor texture
-    public static RenderLayer radiantBurn(Identifier emissiveTexture) {
+    public static RenderType radiantBurn(Identifier emissiveTexture) {
         return RADIANT_BURN.apply(emissiveTexture);
     }
 }

@@ -1,13 +1,13 @@
 package net.rpg_foundation.armor_api.client;
 
-import net.minecraft.client.render.OverlayTexture;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.command.OrderedRenderCommandQueue;
-import net.minecraft.client.render.entity.state.BipedEntityRenderState;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.ItemStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import net.rpg_foundation.armor_api.client.model.GeoArmorBones;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,10 +20,10 @@ import org.jetbrains.annotations.Nullable;
 /// submission order, so the visual stack (base, glow, trim, ...) holds regardless of how the
 /// backend batches them. The [#model] already carries the slot visibility.
 public final class ArmorRenderContext {
-    private final MatrixStack matrices;
-    private final OrderedRenderCommandQueue queue;
+    private final PoseStack matrices;
+    private final SubmitNodeCollector queue;
     private final ItemStack stack;
-    private final BipedEntityRenderState state;
+    private final HumanoidRenderState state;
     private final EquipmentSlot slot;
     private final int light;
     private final GeoArmorRenderer renderer;
@@ -31,10 +31,10 @@ public final class ArmorRenderContext {
     private int nextOrder;
 
     public ArmorRenderContext(
-            MatrixStack matrices,
-            OrderedRenderCommandQueue queue,
+            PoseStack matrices,
+            SubmitNodeCollector queue,
             ItemStack stack,
-            BipedEntityRenderState state,
+            HumanoidRenderState state,
             EquipmentSlot slot,
             int light,
             GeoArmorRenderer renderer,
@@ -50,10 +50,10 @@ public final class ArmorRenderContext {
         this.model = model;
     }
 
-    public MatrixStack matrices() { return matrices; }
-    public OrderedRenderCommandQueue queue() { return queue; }
+    public PoseStack matrices() { return matrices; }
+    public SubmitNodeCollector queue() { return queue; }
     public ItemStack stack() { return stack; }
-    public BipedEntityRenderState state() { return state; }
+    public HumanoidRenderState state() { return state; }
     public EquipmentSlot slot() { return slot; }
     public int light() { return light; }
     public GeoArmorRenderer renderer() { return renderer; }
@@ -66,8 +66,8 @@ public final class ArmorRenderContext {
     /// @param color  ARGB tint, `-1` for none
     /// @param sprite atlas sprite to remap the model's UVs onto, or null to sample the layer's texture
     @SuppressWarnings("unchecked")
-    public void submit(RenderLayer layer, int light, int color, @Nullable Sprite sprite) {
-        queue.getBatchingQueue(nextOrder++)
-                .submitModel((net.minecraft.client.render.entity.model.EntityModel<BipedEntityRenderState>) (net.minecraft.client.model.Model<?>) model, state, matrices, layer, light, OverlayTexture.DEFAULT_UV, color, sprite, state.outlineColor, null);
+    public void submit(RenderType layer, int light, int color, @Nullable TextureAtlasSprite sprite) {
+        queue.order(nextOrder++)
+                .submitModel((net.minecraft.client.model.EntityModel<HumanoidRenderState>) (net.minecraft.client.model.Model<?>) model, state, matrices, layer, light, OverlayTexture.NO_OVERLAY, color, sprite, state.outlineColor, null);
     }
 }

@@ -1,7 +1,7 @@
 package net.rpg_foundation.armor_api.client;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemConvertible;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.ItemLike;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,7 +38,7 @@ public final class ArmorRenderers {
 
     /// Registers one renderer (one shared instance) for all given items - typically the four
     /// pieces of an armor set. Safe to call from any mod-init thread.
-    public static synchronized void register(GeoArmorRenderer renderer, ItemConvertible... items) {
+    public static synchronized void register(GeoArmorRenderer renderer, ItemLike... items) {
         var next = new IdentityHashMap<>(renderers);
         for (var itemConvertible : items) {
             var item = itemConvertible.asItem();

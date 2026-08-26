@@ -2,9 +2,9 @@ package net.rpg_foundation.armor_api.client;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.model.TexturedModelData;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.resources.Identifier;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.geo.GeoBaker;
 import net.rpg_foundation.armor_api.client.geo.GeoParser;
@@ -29,7 +29,7 @@ public final class GeoModelCache {
     /// still sees reload bumps. In normal operation loads and invalidation both happen on the
     /// render/main thread, but the lock makes the cache safe regardless of caller - NeoForge
     /// runs mod init on a parallel dispatch pool, and this class must not care who calls when.
-    private static final Map<Identifier, Optional<TexturedModelData>> TEMPLATES = new HashMap<>();
+    private static final Map<Identifier, Optional<LayerDefinition>> TEMPLATES = new HashMap<>();
     private static volatile int generation = 0;
 
     private GeoModelCache() { }
@@ -45,18 +45,18 @@ public final class GeoModelCache {
         generation++;
     }
 
-    public static synchronized @Nullable TexturedModelData get(Identifier modelId) {
+    public static synchronized @Nullable LayerDefinition get(Identifier modelId) {
         return TEMPLATES.computeIfAbsent(modelId, GeoModelCache::load).orElse(null);
     }
 
-    private static Optional<TexturedModelData> load(Identifier modelId) {
-        var resourceManager = MinecraftClient.getInstance().getResourceManager();
+    private static Optional<LayerDefinition> load(Identifier modelId) {
+        var resourceManager = Minecraft.getInstance().getResourceManager();
         var resource = resourceManager.getResource(modelId);
         if (resource.isEmpty()) {
             ArmorModelApi.LOGGER.error("Geo model '{}' not found; its armor will not render", modelId);
             return Optional.empty();
         }
-        try (Reader reader = resource.get().getReader()) {
+        try (Reader reader = resource.get().openAsReader()) {
             JsonObject json = JsonParser.parseReader(reader).getAsJsonObject();
             var parsed = GeoParser.parse(json, modelId.toString());
             return Optional.of(GeoBaker.bake(parsed, modelId.toString()));

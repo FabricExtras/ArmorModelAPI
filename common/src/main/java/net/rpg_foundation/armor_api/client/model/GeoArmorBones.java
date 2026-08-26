@@ -1,7 +1,7 @@
 package net.rpg_foundation.armor_api.client.model;
 
-import net.minecraft.client.model.ModelPart;
-import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.world.entity.EquipmentSlot;
 import org.jetbrains.annotations.Nullable;
 
 /// The conventional armor bones of a baked geo armor model, independent of which vanilla model class

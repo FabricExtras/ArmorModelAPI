@@ -1,14 +1,14 @@
 package net.rpg_foundation.armor_api.client.layer;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.TexturedRenderLayers;
-import net.minecraft.client.texture.MissingSprite;
-import net.minecraft.client.texture.Sprite;
-import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.item.equipment.trim.ArmorTrim;
-import net.minecraft.util.Atlases;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.data.AtlasIds;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.equipment.trim.ArmorTrim;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.ArmorRenderContext;
 import net.rpg_foundation.armor_api.client.ArmorRenderLayer;
@@ -56,9 +56,9 @@ public class TrimLayer implements ArmorRenderLayer {
                 ? trim -> {
                     var patternName = trim.pattern().value().assetId().getPath();
                     var materialName = trim.material().value().assets().base().suffix();
-                    return baseTexture.withSuffixedPath("_" + patternName + "_" + materialName);
+                    return baseTexture.withSuffix("_" + patternName + "_" + materialName);
                 }
-                : trim -> baseTexture.withSuffixedPath("_" + trim.material().value().assets().base().suffix()),
+                : trim -> baseTexture.withSuffix("_" + trim.material().value().assets().base().suffix()),
                 baseTexture);
     }
 
@@ -78,23 +78,23 @@ public class TrimLayer implements ArmorRenderLayer {
 
     @Override
     public void render(ArmorRenderContext context) {
-        var trim = context.stack().get(DataComponentTypes.TRIM);
+        var trim = context.stack().get(DataComponents.TRIM);
         if (trim == null) {
             return;
         }
-        var atlas = MinecraftClient.getInstance().getAtlasManager().getAtlasTexture(Atlases.ARMOR_TRIMS);
+        var atlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.ARMOR_TRIMS);
         var sprite = resolveSprite(atlas, trim);
         if (sprite == null) {
             return;
         }
         // Like vanilla's EquipmentRenderer the glint is a base-pass thing (drawn by the
         // dispatcher); the trim itself is submitted plain, UV-remapped onto its atlas sprite.
-        context.submit(TexturedRenderLayers.getArmorTrims(trim.pattern().value().decal()), context.light(), -1, sprite);
+        context.submit(Sheets.armorTrimsSheet(trim.pattern().value().decal()), context.light(), -1, sprite);
     }
 
     /// The sprite for the item's trim; the greyscale fallback when the permutation isn't in
     /// the atlas; null to skip the pass.
-    private @Nullable Sprite resolveSprite(SpriteAtlasTexture atlas, ArmorTrim trim) {
+    private @Nullable TextureAtlasSprite resolveSprite(TextureAtlas atlas, ArmorTrim trim) {
         var spriteId = texturePermutations.apply(trim);
         var sprite = atlas.getSprite(spriteId);
         if (!isMissing(sprite)) {
@@ -127,8 +127,8 @@ public class TrimLayer implements ArmorRenderLayer {
         return fallback;
     }
 
-    private static boolean isMissing(Sprite sprite) {
-        return sprite.getContents().getId().equals(MissingSprite.getMissingSpriteId());
+    private static boolean isMissing(TextureAtlasSprite sprite) {
+        return sprite.contents().name().equals(MissingTextureAtlasSprite.getLocation());
     }
 
     private static boolean firstReportFor(Identifier spriteId) {

@@ -1,8 +1,8 @@
 package net.rpg_foundation.armor_api.client;
 
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.equipment.trim.ArmorTrim;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.equipment.trim.ArmorTrim;
 import net.rpg_foundation.armor_api.client.layer.EmissiveLayer;
 import net.rpg_foundation.armor_api.client.layer.TrimLayer;
 import net.rpg_foundation.armor_api.client.model.GeoArmorModel;
@@ -29,10 +29,10 @@ import java.util.function.Function;
 ///
 /// ```java
 /// GeoArmorRenderer.of(
-///         Identifier.of(MOD_ID, "geo/crimson_plate.geo.json"),
-///         Identifier.of(MOD_ID, "textures/armor/crimson_plate.png"))
+///         Identifier.fromNamespaceAndPath(MOD_ID, "geo/crimson_plate.geo.json"),
+///         Identifier.fromNamespaceAndPath(MOD_ID, "textures/armor/crimson_plate.png"))
 ///     .radiant()
-///     .trim(Identifier.of(MOD_ID, "armor/trim/crimson_generic"), false);
+///     .trim(Identifier.fromNamespaceAndPath(MOD_ID, "armor/trim/crimson_generic"), false);
 /// ```
 ///
 /// The fluent pass methods keep the passes sorted by [ArmorRenderLayer#preferredOrder] (glow under trim
@@ -150,7 +150,7 @@ public class GeoArmorRenderer {
             var template = GeoModelCache.get(config.modelId());
             GeoArmorModel model = null;
             if (template != null) {
-                model = new GeoArmorModel(template.createModel());
+                model = new GeoArmorModel(template.bakeRoot());
                 model.applySlotVisibility(slot);
             }
             models.put(slot, model);
@@ -166,7 +166,7 @@ public class GeoArmorRenderer {
             var template = GeoModelCache.get(config.modelId());
             GeoPlayerArmorModel model = null;
             if (template != null) {
-                model = new GeoPlayerArmorModel(template.createModel());
+                model = new GeoPlayerArmorModel(template.bakeRoot());
                 model.applySlotVisibility(slot);
             }
             playerModels.put(slot, model);

@@ -1,19 +1,18 @@
 package net.rpg_foundation.armor_api.client.layer;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.LightmapTextureManager;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.ColorHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.ArmorRenderContext;
 import net.rpg_foundation.armor_api.client.ArmorRenderLayer;
 import net.rpg_foundation.armor_api.client.GeoModelCache;
 import net.rpg_foundation.armor_api.client.compatibility.ShaderCompat;
 import org.jetbrains.annotations.Nullable;
-
+import com.mojang.blaze3d.platform.NativeImage;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -104,26 +103,26 @@ public class EmissiveLayer implements ArmorRenderLayer {
         if (glowTexture == null) {
             return;
         }
-        context.submit(mainRenderLayer(glowTexture), LightmapTextureManager.MAX_LIGHT_COORDINATE, -1, null);
+        context.submit(mainRenderLayer(glowTexture), LightTexture.FULL_BRIGHT, -1, null);
         if (mode == Mode.RADIANT && gain > 1F) {
             // gain <= 1F is burn-off everywhere; under a pack, effectiveGain()'s 1 still
             // draws the additive duplicate
             var burn = ArmorRenderLayers.radiantBurn(glowTexture);
             float remaining = effectiveGain();
             while (remaining >= 1F) {
-                context.submit(burn, LightmapTextureManager.MAX_LIGHT_COORDINATE, -1, null);
+                context.submit(burn, LightTexture.FULL_BRIGHT, -1, null);
                 remaining -= 1F;
             }
             if (remaining > 0.01F) {
                 int channel = Math.round(remaining * 255F);
-                context.submit(burn, LightmapTextureManager.MAX_LIGHT_COORDINATE, ColorHelper.getArgb(255, channel, channel, channel), null);
+                context.submit(burn, LightTexture.FULL_BRIGHT, ARGB.color(255, channel, channel, channel), null);
             }
         }
     }
 
     /// Both layers carry armor view-offset layering - see [ArmorRenderLayers#emissive] for why
     /// a plain `entityTranslucentEmissive` fails the depth test over an armor base pass.
-    private RenderLayer mainRenderLayer(Identifier glowTexture) {
+    private RenderType mainRenderLayer(Identifier glowTexture) {
         return switch (mode) {
             case GLOW -> ArmorRenderLayers.emissive(glowTexture);
             case RADIANT -> ArmorRenderLayers.radiantFill(glowTexture);
@@ -142,7 +141,7 @@ public class EmissiveLayer implements ArmorRenderLayer {
         var path = baseTexture.getPath();
         return path.endsWith(".png")
                 ? baseTexture.withPath(path.substring(0, path.length() - 4) + "_glowmask.png")
-                : baseTexture.withSuffixedPath("_glowmask");
+                : baseTexture.withSuffix("_glowmask");
     }
 
     /// Returns the id of the composite texture for a base+mask pair, baking and registering it
@@ -157,7 +156,7 @@ public class EmissiveLayer implements ArmorRenderLayer {
     }
 
     private static Optional<Identifier> bake(Identifier baseTexture, Identifier maskId) {
-        var resourceManager = MinecraftClient.getInstance().getResourceManager();
+        var resourceManager = Minecraft.getInstance().getResourceManager();
         var maskResource = resourceManager.getResource(maskId);
         if (maskResource.isEmpty()) {
             ArmorModelApi.LOGGER.warn("Emissive mask texture '{}' not found; skipping the glow pass", maskId);
@@ -169,8 +168,8 @@ public class EmissiveLayer implements ArmorRenderLayer {
                     baseTexture, maskId);
             return Optional.empty();
         }
-        try (InputStream maskStream = maskResource.get().getInputStream();
-             InputStream baseStream = baseResource.get().getInputStream();
+        try (InputStream maskStream = maskResource.get().open();
+             InputStream baseStream = baseResource.get().open();
              NativeImage mask = NativeImage.read(maskStream);
              NativeImage base = NativeImage.read(baseStream)) {
 
@@ -185,20 +184,20 @@ public class EmissiveLayer implements ArmorRenderLayer {
             var composite = new NativeImage(mask.getWidth(), mask.getHeight(), true);
             for (int y = 0; y < mask.getHeight(); y++) {
                 for (int x = 0; x < mask.getWidth(); x++) {
-                    int maskColor = mask.getColorArgb(x, y);
+                    int maskColor = mask.getPixel(x, y);
                     int alpha = maskColor >>> 24;
-                    composite.setColorArgb(x, y, alpha == 0
+                    composite.setPixel(x, y, alpha == 0
                             ? 0
-                            : (maskColor & 0xFF000000) | (base.getColorArgb(x, y) & 0x00FFFFFF));
+                            : (maskColor & 0xFF000000) | (base.getPixel(x, y) & 0x00FFFFFF));
                 }
             }
 
-            var compositeId = Identifier.of(ArmorModelApi.MOD_ID,
+            var compositeId = Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID,
                     "emissive/" + maskId.getNamespace() + "/" + maskId.getPath());
             // The NativeImageBackedTexture takes ownership of the composite image; registering
             // under an existing id replaces (and closes) a previously baked texture.
-            MinecraftClient.getInstance().getTextureManager()
-                    .registerTexture(compositeId, new NativeImageBackedTexture(compositeId::toString, composite));
+            Minecraft.getInstance().getTextureManager()
+                    .register(compositeId, new DynamicTexture(compositeId::toString, composite));
             return Optional.of(compositeId);
         } catch (Exception e) {
             ArmorModelApi.LOGGER.error("Failed to bake emissive texture for mask '{}'; skipping the glow pass", maskId, e);

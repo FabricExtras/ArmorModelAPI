@@ -1,9 +1,9 @@
 package net.rpg_foundation.armor_api.client.model;
 
-import net.minecraft.client.model.ModelPart;
-import net.minecraft.client.render.entity.model.BipedEntityModel;
-import net.minecraft.client.render.entity.state.BipedEntityRenderState;
-import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.world.entity.EquipmentSlot;
 import org.jetbrains.annotations.Nullable;
 
 /// A real `BipedEntityModel` whose standard parts carry baked geo armor bones as children, for
@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 /// One instance per slot per [net.rpg_foundation.armor_api.client.GeoArmorRenderer]: the slot
 /// visibility is applied once at creation, the pose is (re)applied by the render command queue
 /// right before each draw.
-public class GeoArmorModel extends BipedEntityModel<BipedEntityRenderState> implements GeoArmorBones {
+public class GeoArmorModel extends HumanoidModel<HumanoidRenderState> implements GeoArmorBones {
     private final GeoArmorBoneSet bones;
 
     public GeoArmorModel(ModelPart root) {
@@ -26,7 +26,7 @@ public class GeoArmorModel extends BipedEntityModel<BipedEntityRenderState> impl
 
     @Override
     public void applySlotVisibility(EquipmentSlot slot) {
-        setVisible(true);
+        setAllVisible(true);
         bones.applySlotVisibility(slot);
     }
 

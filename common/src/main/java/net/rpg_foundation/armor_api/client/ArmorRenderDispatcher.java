@@ -1,16 +1,16 @@
 package net.rpg_foundation.armor_api.client;
 
-import net.minecraft.client.render.RenderLayers;
-import net.minecraft.client.render.command.OrderedRenderCommandQueue;
-import net.minecraft.client.render.entity.model.BipedEntityModel;
-import net.minecraft.client.render.entity.state.BipedEntityRenderState;
-import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.DyedColorComponent;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.tag.ItemTags;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.DyedItemColor;
 
 /// The one armor render routine, shared verbatim by both platform hooks. Runs inside the
 /// entity feature-render pass, replacing vanilla's `renderArmor` body for registered items:
@@ -27,13 +27,13 @@ public final class ArmorRenderDispatcher {
     private ArmorRenderDispatcher() { }
 
     public static boolean render(
-            MatrixStack matrices,
-            OrderedRenderCommandQueue queue,
+            PoseStack matrices,
+            SubmitNodeCollector queue,
             ItemStack stack,
-            BipedEntityRenderState state,
+            HumanoidRenderState state,
             EquipmentSlot slot,
             int light,
-            BipedEntityModel<BipedEntityRenderState> contextModel
+            HumanoidModel<HumanoidRenderState> contextModel
     ) {
         var renderer = ArmorRenderers.get(stack.getItem());
         if (renderer == null) {
@@ -41,23 +41,23 @@ public final class ArmorRenderDispatcher {
         }
         // Vanilla's own guard runs after the hook point, so it is replicated here: a chestplate
         // held in the head slot must not render as armor.
-        var equippable = stack.get(DataComponentTypes.EQUIPPABLE);
+        var equippable = stack.get(DataComponents.EQUIPPABLE);
         if (equippable == null || equippable.slot() != slot) {
             return false;
         }
         // Players need the PlayerEntityModel variant so player-animation libraries pose the armor too
-        var model = state instanceof PlayerEntityRenderState ? renderer.playerModel(slot) : renderer.model(slot);
+        var model = state instanceof AvatarRenderState ? renderer.playerModel(slot) : renderer.model(slot);
         if (model == null) {
             return false; // missing/broken geo asset, already logged by the cache
         }
 
-        int color = stack.isIn(ItemTags.DYEABLE)
-                ? DyedColorComponent.getColor(stack, DyedColorComponent.DEFAULT_COLOR)
+        int color = stack.is(ItemTags.DYEABLE)
+                ? DyedItemColor.getOrDefault(stack, DyedItemColor.LEATHER_COLOR)
                 : -1;
         var context = new ArmorRenderContext(matrices, queue, stack, state, slot, light, renderer, model);
-        context.submit(RenderLayers.armorCutoutNoCull(renderer.config().texture()), light, color, null);
-        if (stack.hasGlint()) {
-            context.submit(RenderLayers.armorEntityGlint(), light, color, null);
+        context.submit(RenderTypes.armorCutoutNoCull(renderer.config().texture()), light, color, null);
+        if (stack.hasFoil()) {
+            context.submit(RenderTypes.armorEntityGlint(), light, color, null);
         }
         for (var layer : renderer.config().layers()) {
             layer.render(context);

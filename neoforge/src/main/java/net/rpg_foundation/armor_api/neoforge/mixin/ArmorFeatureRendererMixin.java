@@ -1,14 +1,14 @@
 package net.rpg_foundation.armor_api.neoforge.mixin;
 
-import net.minecraft.client.render.command.OrderedRenderCommandQueue;
-import net.minecraft.client.render.entity.feature.ArmorFeatureRenderer;
-import net.minecraft.client.render.entity.feature.FeatureRenderer;
-import net.minecraft.client.render.entity.feature.FeatureRendererContext;
-import net.minecraft.client.render.entity.model.BipedEntityModel;
-import net.minecraft.client.render.entity.state.BipedEntityRenderState;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.ItemStack;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.model.HumanoidModel;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.RenderLayerParent;
+import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
+import net.minecraft.client.renderer.entity.layers.RenderLayer;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import net.rpg_foundation.armor_api.client.ArmorRenderDispatcher;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -24,24 +24,24 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 ///
 /// Since 1.21.11 NeoForge no longer patches this method (the 1.21.1 12-arg overload is gone),
 /// so the plain vanilla per-slot method is the one and only target.
-@Mixin(ArmorFeatureRenderer.class)
-public abstract class ArmorFeatureRendererMixin extends FeatureRenderer<BipedEntityRenderState, BipedEntityModel<BipedEntityRenderState>> {
+@Mixin(HumanoidArmorLayer.class)
+public abstract class ArmorFeatureRendererMixin extends RenderLayer<HumanoidRenderState, HumanoidModel<HumanoidRenderState>> {
 
-    private ArmorFeatureRendererMixin(FeatureRendererContext<BipedEntityRenderState, BipedEntityModel<BipedEntityRenderState>> context) {
+    private ArmorFeatureRendererMixin(RenderLayerParent<HumanoidRenderState, HumanoidModel<HumanoidRenderState>> context) {
         super(context);
     }
 
-    @Inject(method = "renderArmor", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "renderArmorPiece", at = @At("HEAD"), cancellable = true)
     private void armor_model_api$renderGeoArmor(
-            MatrixStack matrices,
-            OrderedRenderCommandQueue queue,
+            PoseStack matrices,
+            SubmitNodeCollector queue,
             ItemStack stack,
             EquipmentSlot slot,
             int light,
-            BipedEntityRenderState state,
+            HumanoidRenderState state,
             CallbackInfo ci
     ) {
-        if (ArmorRenderDispatcher.render(matrices, queue, stack, state, slot, light, this.getContextModel())) {
+        if (ArmorRenderDispatcher.render(matrices, queue, stack, state, slot, light, this.getParentModel())) {
             ci.cancel();
         }
     }

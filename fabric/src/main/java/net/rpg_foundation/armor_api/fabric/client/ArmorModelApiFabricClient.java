@@ -3,9 +3,9 @@ package net.rpg_foundation.armor_api.fabric.client;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.ArmorRenderer;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
-import net.minecraft.resource.ResourceType;
-import net.minecraft.resource.SynchronousResourceReloader;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.ArmorRenderDispatcher;
 import net.rpg_foundation.armor_api.client.ArmorRenderers;
@@ -27,8 +27,8 @@ public final class ArmorModelApiFabricClient implements ClientModInitializer {
                         ArmorRenderDispatcher.render(matrices, queue, stack, state, slot, light, contextModel),
                 item));
 
-        ResourceLoader.get(ResourceType.CLIENT_RESOURCES).registerReloader(
-                Identifier.of(ArmorModelApi.MOD_ID, "geo_models"),
-                (SynchronousResourceReloader) manager -> GeoModelCache.invalidate());
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloader(
+                Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID, "geo_models"),
+                (ResourceManagerReloadListener) manager -> GeoModelCache.invalidate());
     }
 }

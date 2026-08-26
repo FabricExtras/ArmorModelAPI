@@ -1,12 +1,12 @@
 package net.rpg_foundation.armor_api.client.geo;
 
-import net.minecraft.client.model.Dilation;
-import net.minecraft.client.model.ModelData;
-import net.minecraft.client.model.ModelPartBuilder;
-import net.minecraft.client.model.ModelPartData;
-import net.minecraft.client.model.ModelTransform;
-import net.minecraft.client.model.TexturedModelData;
-import net.minecraft.client.render.entity.model.EntityModelPartNames;
+import net.minecraft.client.model.geom.PartNames;
+import net.minecraft.client.model.geom.PartPose;
+import net.minecraft.client.model.geom.builders.CubeDeformation;
+import net.minecraft.client.model.geom.builders.CubeListBuilder;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
+import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 
 import java.util.HashMap;
@@ -41,69 +41,69 @@ public final class GeoBaker {
     /// Covers both the empty `bipedX` wrappers (the usual top-level bones) and bare `armorX`
     /// bones at top level, so either authoring style bakes.
     private static final Map<String, String> PART_BY_TOP_LEVEL_BONE = Map.ofEntries(
-            Map.entry("bipedHead", EntityModelPartNames.HEAD),
-            Map.entry("armorHead", EntityModelPartNames.HEAD),
-            Map.entry("bipedBody", EntityModelPartNames.BODY),
-            Map.entry("armorBody", EntityModelPartNames.BODY),
-            Map.entry("bipedRightArm", EntityModelPartNames.RIGHT_ARM),
-            Map.entry("armorRightArm", EntityModelPartNames.RIGHT_ARM),
-            Map.entry("bipedLeftArm", EntityModelPartNames.LEFT_ARM),
-            Map.entry("armorLeftArm", EntityModelPartNames.LEFT_ARM),
-            Map.entry("bipedRightLeg", EntityModelPartNames.RIGHT_LEG),
-            Map.entry("armorRightLeg", EntityModelPartNames.RIGHT_LEG),
-            Map.entry("armorRightBoot", EntityModelPartNames.RIGHT_LEG),
-            Map.entry("bipedLeftLeg", EntityModelPartNames.LEFT_LEG),
-            Map.entry("armorLeftLeg", EntityModelPartNames.LEFT_LEG),
-            Map.entry("armorLeftBoot", EntityModelPartNames.LEFT_LEG),
+            Map.entry("bipedHead", PartNames.HEAD),
+            Map.entry("armorHead", PartNames.HEAD),
+            Map.entry("bipedBody", PartNames.BODY),
+            Map.entry("armorBody", PartNames.BODY),
+            Map.entry("bipedRightArm", PartNames.RIGHT_ARM),
+            Map.entry("armorRightArm", PartNames.RIGHT_ARM),
+            Map.entry("bipedLeftArm", PartNames.LEFT_ARM),
+            Map.entry("armorLeftArm", PartNames.LEFT_ARM),
+            Map.entry("bipedRightLeg", PartNames.RIGHT_LEG),
+            Map.entry("armorRightLeg", PartNames.RIGHT_LEG),
+            Map.entry("armorRightBoot", PartNames.RIGHT_LEG),
+            Map.entry("bipedLeftLeg", PartNames.LEFT_LEG),
+            Map.entry("armorLeftLeg", PartNames.LEFT_LEG),
+            Map.entry("armorLeftBoot", PartNames.LEFT_LEG),
             // Waist: extra geometry shown with the LEGS piece but anchored to (posed by) the
             // chest - skirts, tassets, belts. Authored with pivot (0, 24, 0), the body anchor.
-            Map.entry("bipedWaist", EntityModelPartNames.BODY),
-            Map.entry("armorWaist", EntityModelPartNames.BODY)
+            Map.entry("bipedWaist", PartNames.BODY),
+            Map.entry("armorWaist", PartNames.BODY)
     );
 
     /// Vanilla biped part pivots in vanilla space - must match `BipedEntityModel.getModelData`,
     /// because the vanilla pose is copied onto parts sitting exactly here.
     private static final Map<String, float[]> STANDARD_PART_PIVOTS = Map.of(
-            EntityModelPartNames.HEAD, new float[] { 0, 0, 0 },
-            EntityModelPartNames.HAT, new float[] { 0, 0, 0 },
-            EntityModelPartNames.BODY, new float[] { 0, 0, 0 },
-            EntityModelPartNames.RIGHT_ARM, new float[] { -5, 2, 0 },
-            EntityModelPartNames.LEFT_ARM, new float[] { 5, 2, 0 },
-            EntityModelPartNames.RIGHT_LEG, new float[] { -1.9f, 12, 0 },
-            EntityModelPartNames.LEFT_LEG, new float[] { 1.9f, 12, 0 }
+            PartNames.HEAD, new float[] { 0, 0, 0 },
+            PartNames.HAT, new float[] { 0, 0, 0 },
+            PartNames.BODY, new float[] { 0, 0, 0 },
+            PartNames.RIGHT_ARM, new float[] { -5, 2, 0 },
+            PartNames.LEFT_ARM, new float[] { 5, 2, 0 },
+            PartNames.RIGHT_LEG, new float[] { -1.9f, 12, 0 },
+            PartNames.LEFT_LEG, new float[] { 1.9f, 12, 0 }
     );
 
     private GeoBaker() { }
 
-    public static TexturedModelData bake(GeoModel model, String source) {
-        ModelData data = new ModelData();
-        ModelPartData root = data.getRoot();
+    public static LayerDefinition bake(GeoModel model, String source) {
+        MeshDefinition data = new MeshDefinition();
+        PartDefinition root = data.getRoot();
 
-        var standardParts = new HashMap<String, ModelPartData>();
+        var standardParts = new HashMap<String, PartDefinition>();
         for (var entry : STANDARD_PART_PIVOTS.entrySet()) {
-            if (entry.getKey().equals(EntityModelPartNames.HAT)) {
+            if (entry.getKey().equals(PartNames.HAT)) {
                 continue; // nested under head below, where BipedEntityModel looks for it since 1.21.11
             }
             var pivot = entry.getValue();
-            standardParts.put(entry.getKey(), root.addChild(
+            standardParts.put(entry.getKey(), root.addOrReplaceChild(
                     entry.getKey(),
-                    ModelPartBuilder.create(),
-                    ModelTransform.origin(pivot[0], pivot[1], pivot[2])
+                    CubeListBuilder.create(),
+                    PartPose.offset(pivot[0], pivot[1], pivot[2])
             ));
         }
         // Since 1.21.11 `BipedEntityModel(ModelPart)` resolves `hat` as a CHILD of `head`
         // (`head.getChild("hat")`), not of the root - a root-level hat throws
         // "Can't find part hat" at construction. Same pivot as head (0,0,0), so the geo bones
         // attach and pose exactly as before.
-        standardParts.put(EntityModelPartNames.HAT, standardParts.get(EntityModelPartNames.HEAD)
-                .addChild(EntityModelPartNames.HAT, ModelPartBuilder.create(), ModelTransform.NONE));
+        standardParts.put(PartNames.HAT, standardParts.get(PartNames.HEAD)
+                .addOrReplaceChild(PartNames.HAT, CubeListBuilder.create(), PartPose.ZERO));
         // `PlayerEntityModel(root, thinArms)` (used for players, see GeoPlayerArmorModel) additionally
         // requires the skin-overlay parts; empty, same pivots as their parents.
-        standardParts.get(EntityModelPartNames.BODY).addChild("jacket", ModelPartBuilder.create(), ModelTransform.NONE);
-        standardParts.get(EntityModelPartNames.LEFT_ARM).addChild("left_sleeve", ModelPartBuilder.create(), ModelTransform.NONE);
-        standardParts.get(EntityModelPartNames.RIGHT_ARM).addChild("right_sleeve", ModelPartBuilder.create(), ModelTransform.NONE);
-        standardParts.get(EntityModelPartNames.LEFT_LEG).addChild("left_pants", ModelPartBuilder.create(), ModelTransform.NONE);
-        standardParts.get(EntityModelPartNames.RIGHT_LEG).addChild("right_pants", ModelPartBuilder.create(), ModelTransform.NONE);
+        standardParts.get(PartNames.BODY).addOrReplaceChild("jacket", CubeListBuilder.create(), PartPose.ZERO);
+        standardParts.get(PartNames.LEFT_ARM).addOrReplaceChild("left_sleeve", CubeListBuilder.create(), PartPose.ZERO);
+        standardParts.get(PartNames.RIGHT_ARM).addOrReplaceChild("right_sleeve", CubeListBuilder.create(), PartPose.ZERO);
+        standardParts.get(PartNames.LEFT_LEG).addOrReplaceChild("left_pants", CubeListBuilder.create(), PartPose.ZERO);
+        standardParts.get(PartNames.RIGHT_LEG).addOrReplaceChild("right_pants", CubeListBuilder.create(), PartPose.ZERO);
 
         // Bones referencing a parent that isn't in the file are top-level: armor templates
         // exported from Blockbench often parent armorX bones to the implicit vanilla skeleton
@@ -141,13 +141,13 @@ public final class GeoBaker {
             addBone(standardParts.get(partName), bone, partPivot[0], partPivot[1], partPivot[2],
                     childrenByParent, model, source);
         }
-        return TexturedModelData.of(data, model.textureWidth(), model.textureHeight());
+        return LayerDefinition.create(data, model.textureWidth(), model.textureHeight());
     }
 
     /// Adds `bone` under `parent`, whose pivot sits at (parentX, parentY, parentZ) in vanilla
     /// absolute space, then recurses into the bone's children.
     private static void addBone(
-            ModelPartData parent,
+            PartDefinition parent,
             GeoModel.GeoBone bone,
             float parentX, float parentY, float parentZ,
             Map<String, java.util.List<GeoModel.GeoBone>> childrenByParent,
@@ -164,7 +164,7 @@ public final class GeoBaker {
         float yaw = rotation != null ? (float) Math.toRadians(rotation[1]) : 0;
         float roll = rotation != null ? (float) Math.toRadians(rotation[2]) : 0;
 
-        var builder = ModelPartBuilder.create();
+        var builder = CubeListBuilder.create();
         int syntheticCubes = 0;
         for (var cube : bone.cubes()) {
             if (cube.rotation() == null) {
@@ -174,7 +174,7 @@ public final class GeoBaker {
             }
         }
 
-        var part = parent.addChild(bone.name(), builder, ModelTransform.of(
+        var part = parent.addOrReplaceChild(bone.name(), builder, PartPose.offsetAndRotation(
                 absX - parentX, absY - parentY, absZ - parentZ, pitch, yaw, roll));
 
         // Rotated cubes: vanilla cuboids cannot rotate, so each becomes a wrapper part carrying
@@ -186,9 +186,9 @@ public final class GeoBaker {
             }
             var cubePivot = cube.pivot();
             var cubeRotation = cube.rotation();
-            var cubeBuilder = ModelPartBuilder.create();
+            var cubeBuilder = CubeListBuilder.create();
             addCuboid(cubeBuilder, cube, cubePivot[0], cubePivot[1], cubePivot[2], model, bone.name(), source);
-            part.addChild("cube_" + cubeIndex++, cubeBuilder, ModelTransform.of(
+            part.addOrReplaceChild("cube_" + cubeIndex++, cubeBuilder, PartPose.offsetAndRotation(
                     cubePivot[0] - bone.pivot()[0],
                     bone.pivot()[1] - cubePivot[1],  // V() y-flip of the relative offset
                     cubePivot[2] - bone.pivot()[2],
@@ -210,7 +210,7 @@ public final class GeoBaker {
     /// Adds one cuboid relative to a bedrock-space pivot (px, py, pz):
     /// min corner = (ox - px, py - oy - sy, oz - pz) per the V() conversion.
     private static void addCuboid(
-            ModelPartBuilder builder,
+            CubeListBuilder builder,
             GeoModel.GeoCube cube,
             float px, float py, float pz,
             GeoModel model,
@@ -253,18 +253,18 @@ public final class GeoBaker {
         float flatY = sizeY == 0 ? epsilon : 0;
         float flatZ = sizeZ == 0 ? epsilon : 0;
 
-        builder.uv(Math.round(u), Math.round(v))
-                .mirrored(cube.mirror())
-                .cuboid(
+        builder.texOffs(Math.round(u), Math.round(v))
+                .mirror(cube.mirror())
+                .addBox(
                         cube.origin()[0] - px + halfFracX,
                         py - cube.origin()[1] - sizeY + halfFracY,
                         cube.origin()[2] - pz + halfFracZ,
                         flooredX, flooredY, flooredZ,
-                        new Dilation(
+                        new CubeDeformation(
                                 cube.inflate() + halfFracX + flatX,
                                 cube.inflate() + halfFracY + flatY,
                                 cube.inflate() + halfFracZ + flatZ)
                 )
-                .mirrored(false);
+                .mirror(false);
     }
 }

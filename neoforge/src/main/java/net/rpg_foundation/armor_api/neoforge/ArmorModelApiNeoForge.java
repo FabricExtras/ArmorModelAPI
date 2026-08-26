@@ -1,7 +1,7 @@
 package net.rpg_foundation.armor_api.neoforge;
 
-import net.minecraft.resource.SynchronousResourceReloader;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -21,8 +21,8 @@ public final class ArmorModelApiNeoForge {
             net.rpg_foundation.armor_api.client.compatibility.ShaderCompat.initialize();
             modBus.addListener(AddClientReloadListenersEvent.class, event ->
                     event.addListener(
-                            Identifier.of(ArmorModelApi.MOD_ID, "geo_models"),
-                            (SynchronousResourceReloader) manager -> GeoModelCache.invalidate()));
+                            Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID, "geo_models"),
+                            (ResourceManagerReloadListener) manager -> GeoModelCache.invalidate()));
         }
     }
 }
