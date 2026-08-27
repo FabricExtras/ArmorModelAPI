@@ -7,7 +7,6 @@ import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.DyedItemColor;
@@ -51,9 +50,9 @@ public final class ArmorRenderDispatcher {
             return false; // missing/broken geo asset, already logged by the cache
         }
 
-        int color = stack.is(ItemTags.DYEABLE)
-                ? DyedItemColor.getOrDefault(stack, DyedItemColor.LEATHER_COLOR)
-                : -1;
+        // 26.1: there is no `dyeable` item tag any more; vanilla tints per equipment layer from the
+        // stack's dyed_color component. Same here: dyed → tint, undyed → untinted.
+        int color = DyedItemColor.getOrDefault(stack, -1);
         var context = new ArmorRenderContext(matrices, queue, stack, state, slot, light, renderer, model);
         context.submit(RenderTypes.armorCutoutNoCull(renderer.config().texture()), light, color, null);
         if (stack.hasFoil()) {

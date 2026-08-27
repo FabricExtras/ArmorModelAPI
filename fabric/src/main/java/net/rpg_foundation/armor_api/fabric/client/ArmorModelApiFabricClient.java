@@ -27,7 +27,7 @@ public final class ArmorModelApiFabricClient implements ClientModInitializer {
                         ArmorRenderDispatcher.render(matrices, queue, stack, state, slot, light, contextModel),
                 item));
 
-        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloader(
+        ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(
                 Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID, "geo_models"),
                 (ResourceManagerReloadListener) manager -> GeoModelCache.invalidate());
     }

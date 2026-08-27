@@ -1,8 +1,9 @@
 package net.rpg_foundation.armor_api.client.model;
 
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.world.entity.EquipmentSlot;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /// Resolves and toggles the conventional armor bones under a baked root; shared by the model classes.
 final class GeoArmorBoneSet implements GeoArmorBones {
@@ -61,6 +62,18 @@ final class GeoArmorBoneSet implements GeoArmorBones {
             case "armorWaist" -> armorWaist;
             default -> null;
         };
+    }
+
+    /// `HumanoidModel.setAllVisible` is gone since 26.1 (armor models get their slot visibility baked
+    /// in via `ArmorModelSet` now); this is its body, for the standard biped parts.
+    static void setBipedVisible(HumanoidModel<?> model, boolean visible) {
+        model.head.visible = visible;
+        model.hat.visible = visible;
+        model.body.visible = visible;
+        model.rightArm.visible = visible;
+        model.leftArm.visible = visible;
+        model.rightLeg.visible = visible;
+        model.leftLeg.visible = visible;
     }
 
     private static void setArmorBoneVisible(@Nullable ModelPart part, boolean visible) {

@@ -1,7 +1,10 @@
 package net.rpg_foundation.armor_api.client.layer;
 
 import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.ColorTargetState;
+import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.CompareOp;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.LayeringTransform;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -60,9 +63,9 @@ public final class ArmorRenderLayers {
             .withShaderDefine("ALPHA_CUTOUT", 0.1F)
             .withShaderDefine("PER_FACE_LIGHTING")
             .withSampler("Sampler1")
-            .withBlend(BlendFunction.TRANSLUCENT)
+            .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
             .withCull(false)
-            .withDepthWrite(true)
+            .withDepthStencilState(DepthStencilState.DEFAULT)   // LEQUAL + depth write
             .build();
 
     /// Additive burn over the fill; writes no depth - the fill already did, at the same
@@ -72,9 +75,9 @@ public final class ArmorRenderLayers {
             .withShaderDefine("ALPHA_CUTOUT", 0.1F)
             .withShaderDefine("PER_FACE_LIGHTING")
             .withSampler("Sampler1")
-            .withBlend(BlendFunction.ADDITIVE)
+            .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
             .withCull(false)
-            .withDepthWrite(false)
+            .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
             .build();
 
     private static final Function<Identifier, RenderType> RADIANT_FILL = Util.memoize(texture ->

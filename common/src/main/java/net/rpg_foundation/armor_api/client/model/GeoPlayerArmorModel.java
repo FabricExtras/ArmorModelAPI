@@ -19,7 +19,7 @@ public class GeoPlayerArmorModel extends PlayerModel implements GeoArmorBones {
 
     @Override
     public void applySlotVisibility(EquipmentSlot slot) {
-        setAllVisible(true);
+        GeoArmorBoneSet.setBipedVisible(this, true);
         // The player-skin overlay parts are empty carriers here; keep them out of the way regardless
         leftSleeve.visible = false;
         rightSleeve.visible = false;

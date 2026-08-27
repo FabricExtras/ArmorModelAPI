@@ -1,11 +1,11 @@
 package net.rpg_foundation.armor_api.client.layer;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
+import net.minecraft.util.LightCoordsUtil;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 import net.rpg_foundation.armor_api.client.ArmorRenderContext;
 import net.rpg_foundation.armor_api.client.ArmorRenderLayer;
@@ -103,19 +103,19 @@ public class EmissiveLayer implements ArmorRenderLayer {
         if (glowTexture == null) {
             return;
         }
-        context.submit(mainRenderLayer(glowTexture), LightTexture.FULL_BRIGHT, -1, null);
+        context.submit(mainRenderLayer(glowTexture), LightCoordsUtil.FULL_BRIGHT, -1, null);
         if (mode == Mode.RADIANT && gain > 1F) {
             // gain <= 1F is burn-off everywhere; under a pack, effectiveGain()'s 1 still
             // draws the additive duplicate
             var burn = ArmorRenderLayers.radiantBurn(glowTexture);
             float remaining = effectiveGain();
             while (remaining >= 1F) {
-                context.submit(burn, LightTexture.FULL_BRIGHT, -1, null);
+                context.submit(burn, LightCoordsUtil.FULL_BRIGHT, -1, null);
                 remaining -= 1F;
             }
             if (remaining > 0.01F) {
                 int channel = Math.round(remaining * 255F);
-                context.submit(burn, LightTexture.FULL_BRIGHT, ARGB.color(255, channel, channel, channel), null);
+                context.submit(burn, LightCoordsUtil.FULL_BRIGHT, ARGB.color(255, channel, channel, channel), null);
             }
         }
     }

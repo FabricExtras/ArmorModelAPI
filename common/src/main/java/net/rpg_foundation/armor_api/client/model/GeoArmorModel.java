@@ -26,7 +26,7 @@ public class GeoArmorModel extends HumanoidModel<HumanoidRenderState> implements
 
     @Override
     public void applySlotVisibility(EquipmentSlot slot) {
-        setAllVisible(true);
+        GeoArmorBoneSet.setBipedVisible(this, true);
         bones.applySlotVisibility(slot);
     }
 
