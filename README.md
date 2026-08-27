@@ -79,7 +79,7 @@ versionRange = "[1.0,)"
 | Minecraft | 1.21.1 |
 | Fabric Loader | ≥ 0.16.0, with Fabric API |
 | NeoForge | ≥ 21.1 |
-| Java | 21 |
+| Java | 25 |
 
 ---
 
