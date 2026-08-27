@@ -13,6 +13,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.Util;
 import net.rpg_foundation.armor_api.ArmorModelApi;
 
+import java.util.List;
 import java.util.function.Function;
 
 /// Custom render layers for armor passes. Since 1.21.11 a render layer is a public
@@ -108,5 +109,16 @@ public final class ArmorRenderLayers {
     /// @param emissiveTexture the composited glow texture, not the base armor texture
     public static RenderType radiantBurn(Identifier emissiveTexture) {
         return RADIANT_BURN.apply(emissiveTexture);
+    }
+
+    /// Every `RenderPipeline` this class builds itself, i.e. the ones a shader mod cannot know
+    /// about from vanilla's registry. Iris maps *pipelines* (not render layers) to its shader
+    /// programs, so each of these has to be declared once - see
+    /// [net.rpg_foundation.armor_api.client.compatibility.ShaderCompat#initialize].
+    ///
+    /// The vanilla-derived [#emissive] layer is deliberately absent: it runs on
+    /// `RenderPipelines.ENTITY_TRANSLUCENT_EMISSIVE`, which Iris already has in its core map.
+    public static List<RenderPipeline> customPipelines() {
+        return List.of(RADIANT_FILL_PIPELINE, RADIANT_BURN_PIPELINE);
     }
 }
