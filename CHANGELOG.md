@@ -1,6 +1,9 @@
 # 1.0.2
 
-- 1.21.11 support
+- Minecraft 26.1.2 support (Java 25).
+- Undyed armor is no longer leather-tinted: only an explicit `dyed_color` component tints a geo model
+- The access widener now ships in the production jars
+- Radiant glow pipelines are registered with Iris, so radiant armor glows under shader packs again
 - Player armor uses a `PlayerEntityModel`-based geo model, so player animation libraries (PAL) pose it
 - Fix `GeoArmorModel` construction (missing biped parts)
 

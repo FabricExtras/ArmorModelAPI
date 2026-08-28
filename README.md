@@ -52,7 +52,7 @@ dependencies {
 
 ```properties
 # gradle.properties
-armor_model_api_version = 1.0.0+1.21.1
+armor_model_api_version = 1.0.2+26.1.2
 ```
 
 The common module compiles against the fabric artifact — the standard pattern for consuming multi-loader libraries in Architectury workspaces.
@@ -76,9 +76,9 @@ versionRange = "[1.0,)"
 
 | | |
 |---|---|
-| Minecraft | 1.21.1 |
-| Fabric Loader | ≥ 0.16.0, with Fabric API |
-| NeoForge | ≥ 21.1 |
+| Minecraft | 26.1.x |
+| Fabric Loader | ≥ 0.19.3, with Fabric API |
+| NeoForge | ≥ 26.1 |
 | Java | 25 |
 
 ---
