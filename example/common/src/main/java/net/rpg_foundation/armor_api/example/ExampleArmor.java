@@ -32,6 +32,11 @@ import java.util.List;
 /// (patterns are ignored - material-only permutations, like the Wizards sets). A trim material
 /// added by a third-party mod exercises TrimLayer's greyscale fallback.
 ///
+/// Override test (`custom_data` component, see README "Item component overrides"): iron wearing
+/// the chainmail set's assets, then a broken model id that must fall back to iron's own model:
+///   /give @p iron_chestplate[minecraft:custom_data={armor_model_api:{model:"armor_model_api_example:geo/copyright_wizard_robes.geo.json",texture:"armor_model_api_example:textures/armor/copyright_wizard_robe.png"}}]
+///   /give @p iron_chestplate[minecraft:custom_data={armor_model_api:{model:"armor_model_api_example:geo/nope.geo.json"}}]
+///
 /// The `copyright_`-prefixed assets (justicar/lightbringer/spellblade/wizard-robe sets) are
 /// copyright-protected and gitignored - present only on machines that have them locally. In a
 /// fresh clone those registrations log a missing-geo error once and fall back

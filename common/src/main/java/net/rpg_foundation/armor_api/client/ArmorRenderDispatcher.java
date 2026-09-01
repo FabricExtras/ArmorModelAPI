@@ -10,15 +10,18 @@ import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.DyedColorComponent;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.ItemStack;
+import net.rpg_foundation.armor_api.client.model.GeoArmorBones;
 import net.minecraft.registry.tag.ItemTags;
 
 /// The one armor render routine, shared verbatim by both platform hooks. Runs inside the
 /// entity feature-render pass, replacing vanilla's `renderArmor` body for registered items:
 ///
-/// 1. the per-slot model (slot visibility baked in, incl. the FEET → boot bones mapping
+/// 1. the stack's [ArmorOverrides] pick the model and base texture in effect (a broken
+///    override model falls back to the renderer's own)
+/// 2. the per-slot model (slot visibility baked in, incl. the FEET → boot bones mapping
 ///    vanilla can't express); the vanilla pose is applied at draw time from the render state
-/// 2. base pass - armor cutout render layer, dye color, then the armor glint pass
-/// 3. the renderer's extra layers (trim, glow, ...), each a plain re-submit with its own layer
+/// 3. base pass - armor cutout render layer, dye color, then the armor glint pass
+/// 4. the renderer's extra layers (trim, glow, ...), each a plain re-submit with its own layer
 ///
 /// Returns false when nothing was rendered (unregistered item, wrong slot, missing model) so
 /// the NeoForge mixin can leave vanilla rendering untouched in that case.
@@ -45,17 +48,27 @@ public final class ArmorRenderDispatcher {
         if (equippable == null || equippable.slot() != slot) {
             return false;
         }
+        var overrides = ArmorOverrides.of(stack);
         // Players need the PlayerEntityModel variant so player-animation libraries pose the armor too
-        var model = state instanceof PlayerEntityRenderState ? renderer.playerModel(slot) : renderer.model(slot);
+        boolean player = state instanceof PlayerEntityRenderState;
+        GeoArmorBones model = null;
+        if (overrides.model() != null) {
+            model = player ? renderer.playerModel(overrides.model(), slot) : renderer.model(overrides.model(), slot);
+        }
+        if (model == null) {
+            // no override, or a missing/broken one (logged once by the cache) → the renderer's own
+            model = player ? renderer.playerModel(slot) : renderer.model(slot);
+        }
         if (model == null) {
             return false; // missing/broken geo asset, already logged by the cache
         }
+        var texture = overrides.textureOr(renderer.config().texture());
 
         int color = stack.isIn(ItemTags.DYEABLE)
                 ? DyedColorComponent.getColor(stack, DyedColorComponent.DEFAULT_COLOR)
                 : -1;
-        var context = new ArmorRenderContext(matrices, queue, stack, state, slot, light, renderer, model);
-        context.submit(RenderLayers.armorCutoutNoCull(renderer.config().texture()), light, color, null);
+        var context = new ArmorRenderContext(matrices, queue, stack, state, slot, light, renderer, model, texture, overrides);
+        context.submit(RenderLayers.armorCutoutNoCull(texture), light, color, null);
         if (stack.hasGlint()) {
             context.submit(RenderLayers.armorEntityGlint(), light, color, null);
         }

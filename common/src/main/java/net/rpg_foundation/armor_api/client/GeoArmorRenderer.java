@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -52,8 +53,9 @@ public class GeoArmorRenderer {
     private final Config config;
     /// One model per slot: rendering is queued and drawn later, so the slot visibility cannot
     /// be flipped on a shared instance between submissions.
-    private final Map<EquipmentSlot, GeoArmorModel> models = new EnumMap<>(EquipmentSlot.class);
-    private final Map<EquipmentSlot, GeoPlayerArmorModel> playerModels = new EnumMap<>(EquipmentSlot.class);
+    /// Keyed by geo id (the renderer's own plus any [ArmorOverrides] model a stack asked for), then slot.
+    private final Map<Identifier, Map<EquipmentSlot, GeoArmorModel>> models = new HashMap<>();
+    private final Map<Identifier, Map<EquipmentSlot, GeoPlayerArmorModel>> playerModels = new HashMap<>();
     private int modelGeneration = -1;
 
     public GeoArmorRenderer(Identifier modelId, Identifier texture, List<ArmorRenderLayer> layers) {
@@ -145,33 +147,46 @@ public class GeoArmorRenderer {
     /// unsynchronized, and the returned model is shared mutable state (pose, visibility)
     /// that only means anything mid-render. Registration threads have no business here.
     public @Nullable GeoArmorModel model(EquipmentSlot slot) {
+        return model(config.modelId(), slot);
+    }
+
+    /// The per-slot model for an arbitrary geo id rendered through this renderer - how a
+    /// stack's [ArmorOverrides#model] is served. Same caching and threading rules as [#model(EquipmentSlot)].
+    public @Nullable GeoArmorModel model(Identifier modelId, EquipmentSlot slot) {
         refreshGeneration();
-        if (!models.containsKey(slot)) {
-            var template = GeoModelCache.get(config.modelId());
+        var bySlot = models.computeIfAbsent(modelId, id -> new EnumMap<>(EquipmentSlot.class));
+        if (!bySlot.containsKey(slot)) {
+            var template = GeoModelCache.get(modelId);
             GeoArmorModel model = null;
             if (template != null) {
                 model = new GeoArmorModel(template.createModel());
                 model.applySlotVisibility(slot);
             }
-            models.put(slot, model);
+            bySlot.put(slot, model);
         }
-        return models.get(slot);
+        return bySlot.get(slot);
     }
 
     /// The player-state variant (a `PlayerEntityModel`, so player animation libraries pose it);
     /// same caching rules as [#model].
     public @Nullable GeoPlayerArmorModel playerModel(EquipmentSlot slot) {
+        return playerModel(config.modelId(), slot);
+    }
+
+    /// Player-state variant of [#model(Identifier, EquipmentSlot)].
+    public @Nullable GeoPlayerArmorModel playerModel(Identifier modelId, EquipmentSlot slot) {
         refreshGeneration();
-        if (!playerModels.containsKey(slot)) {
-            var template = GeoModelCache.get(config.modelId());
+        var bySlot = playerModels.computeIfAbsent(modelId, id -> new EnumMap<>(EquipmentSlot.class));
+        if (!bySlot.containsKey(slot)) {
+            var template = GeoModelCache.get(modelId);
             GeoPlayerArmorModel model = null;
             if (template != null) {
                 model = new GeoPlayerArmorModel(template.createModel());
                 model.applySlotVisibility(slot);
             }
-            playerModels.put(slot, model);
+            bySlot.put(slot, model);
         }
-        return playerModels.get(slot);
+        return bySlot.get(slot);
     }
 
     private void refreshGeneration() {

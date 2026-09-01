@@ -27,6 +27,10 @@ import java.util.function.Function;
 /// Sprite naming: `<base>_<patternName>_<materialName>` when patterns are supported, else
 /// `<base>_<materialName>` - or any custom permutation function.
 ///
+/// A stack's [net.rpg_foundation.armor_api.client.ArmorOverrides#trim] replaces the base
+/// texture for layers built from one (same naming rule, and it becomes the greyscale fallback);
+/// layers built from a custom permutation function have no base to swap and ignore it.
+///
 /// ## Third-party trim materials - greyscale fallback
 ///
 /// Mods can register new trim materials (with their own color palettes). A fixed
@@ -41,6 +45,10 @@ public class TrimLayer implements ArmorRenderLayer {
 
     private final Function<ArmorTrim, Identifier> texturePermutations;
     private final @Nullable Identifier fallbackTexture; // greyscale base; null = no fallback, skip instead
+    /// Set when built from a base texture (the convention-named layers), so a stack's trim
+    /// override can re-derive the sprite name; null for custom permutation functions.
+    private final @Nullable Identifier baseTexture;
+    private final boolean supportPatterns;
 
     /// Permuted sprite ids already reported missing (log once). Render thread only; reset when
     /// the reload generation moves on - a reload can add the sprite (or the fallback).
@@ -52,14 +60,20 @@ public class TrimLayer implements ArmorRenderLayer {
     }
 
     public TrimLayer(Identifier baseTexture, boolean supportPatterns) {
-        this(supportPatterns
-                ? trim -> {
-                    var patternName = trim.pattern().value().assetId().getPath();
-                    var materialName = trim.material().value().assets().base().suffix();
-                    return baseTexture.withSuffixedPath("_" + patternName + "_" + materialName);
-                }
-                : trim -> baseTexture.withSuffixedPath("_" + trim.material().value().assets().base().suffix()),
-                baseTexture);
+        this.texturePermutations = trim -> spriteId(baseTexture, supportPatterns, trim);
+        this.fallbackTexture = baseTexture;
+        this.baseTexture = baseTexture;
+        this.supportPatterns = supportPatterns;
+    }
+
+    /// The conventional sprite name for a trim on a base texture.
+    public static Identifier spriteId(Identifier baseTexture, boolean supportPatterns, ArmorTrim trim) {
+        var materialName = trim.material().value().assets().base().suffix();
+        if (!supportPatterns) {
+            return baseTexture.withSuffixedPath("_" + materialName);
+        }
+        var patternName = trim.pattern().value().assetId().getPath();
+        return baseTexture.withSuffixedPath("_" + patternName + "_" + materialName);
     }
 
     public TrimLayer(Function<ArmorTrim, Identifier> texturePermutations) {
@@ -69,6 +83,8 @@ public class TrimLayer implements ArmorRenderLayer {
     public TrimLayer(Function<ArmorTrim, Identifier> texturePermutations, @Nullable Identifier fallbackTexture) {
         this.texturePermutations = texturePermutations;
         this.fallbackTexture = fallbackTexture;
+        this.baseTexture = null;
+        this.supportPatterns = false;
     }
 
     @Override
@@ -83,7 +99,10 @@ public class TrimLayer implements ArmorRenderLayer {
             return;
         }
         var atlas = MinecraftClient.getInstance().getAtlasManager().getAtlasTexture(Atlases.ARMOR_TRIMS);
-        var sprite = resolveSprite(atlas, trim);
+        var overrideBase = context.overrides().trim();
+        var sprite = overrideBase != null && baseTexture != null
+                ? resolveSprite(atlas, spriteId(overrideBase, supportPatterns, trim), overrideBase)
+                : resolveSprite(atlas, texturePermutations.apply(trim), fallbackTexture);
         if (sprite == null) {
             return;
         }
@@ -94,8 +113,7 @@ public class TrimLayer implements ArmorRenderLayer {
 
     /// The sprite for the item's trim; the greyscale fallback when the permutation isn't in
     /// the atlas; null to skip the pass.
-    private @Nullable Sprite resolveSprite(SpriteAtlasTexture atlas, ArmorTrim trim) {
-        var spriteId = texturePermutations.apply(trim);
+    private static @Nullable Sprite resolveSprite(SpriteAtlasTexture atlas, Identifier spriteId, @Nullable Identifier fallbackTexture) {
         var sprite = atlas.getSprite(spriteId);
         if (!isMissing(sprite)) {
             return sprite;
