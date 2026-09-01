@@ -26,8 +26,13 @@ import net.minecraft.util.math.ColorHelper;
 /// 4. base pass - armor cutout render layer, dye color, glint via the armor foil buffer
 /// 5. the renderer's extra layers (trim, glow, ...), each a plain re-render with its own buffer
 ///
-/// Returns false when nothing was rendered (unregistered item, wrong slot, missing model) so
-/// the NeoForge mixin can leave vanilla rendering untouched in that case.
+/// An item without a renderer is still rendered when its stack's overrides name both a model
+/// and a texture ([ArmorOverrides#takesOver]) - through the shared
+/// [ArmorRenderers#takeoverRenderer]; there a broken model is left to vanilla instead of falling
+/// back, since the takeover renderer has no model of its own.
+///
+/// Returns false when nothing was rendered (unregistered item without takeover data, wrong slot,
+/// missing model) so the platform mixins can leave vanilla rendering untouched in that case.
 @Environment(EnvType.CLIENT)
 public final class ArmorRenderDispatcher {
 
@@ -42,18 +47,23 @@ public final class ArmorRenderDispatcher {
             int light,
             BipedEntityModel<LivingEntity> contextModel
     ) {
+        var overrides = ArmorOverrides.of(stack);
         var renderer = ArmorRenderers.get(stack.getItem());
+        boolean takeover = false;
         if (renderer == null) {
-            return false;
+            if (!overrides.takesOver()) {
+                return false;
+            }
+            renderer = ArmorRenderers.takeoverRenderer();
+            takeover = true;
         }
         // Vanilla's own guard runs after the hook point, so it is replicated here: a chestplate
         // held in the head slot must not render as armor.
         if (!(stack.getItem() instanceof ArmorItem armorItem) || armorItem.getSlotType() != slot) {
             return false;
         }
-        var overrides = ArmorOverrides.of(stack);
         var model = overrides.model() != null ? renderer.model(overrides.model()) : null;
-        if (model == null) {
+        if (model == null && !takeover) {
             model = renderer.model(); // no override, or a missing/broken one (logged once by the cache)
         }
         if (model == null) {

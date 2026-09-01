@@ -188,7 +188,15 @@ A registered piece can carry its own assets in the vanilla **`minecraft:custom_d
 | `glowmask` | the emissive mask | wins over both a constructor-given mask and the derived name |
 | `trim` | the trim sprite base | same `<base>_<material>` / `<base>_<pattern>_<material>` naming as the layer was built with, and it becomes the greyscale fallback; layers built from a custom permutation function ignore it |
 
-The same data can be set by a loot table (`minecraft:set_custom_data` / `set_components`), a recipe result's `components`, or SpellEngine-style component patches — anything that writes item components. Overrides only apply to items that already have a renderer registered; the component decides *which* assets that renderer draws, not *whether* the library takes over the item. Because `custom_data` is an ordinary vanilla component the library stays client-side: nothing is registered, nothing needs to be on the server.
+The same data can be set by a loot table (`minecraft:set_custom_data` / `set_components`), a recipe result's `components`, or SpellEngine-style component patches — anything that writes item components. Because `custom_data` is an ordinary vanilla component the library stays client-side: nothing is registered, nothing needs to be on the server.
+
+**Taking over unregistered items.** On an item with a registered renderer the component decides *which* assets that renderer draws. A stack that names **both `model` and `texture`** goes further: it renders through the library even when nobody registered the item — any vanilla or third-party armor piece can be given a geo look from a datapack:
+
+```
+/give @p minecraft:turtle_helmet[minecraft:custom_data={armor_model_api:{model:"armory_rpgs:geo/lightbringer_armor.geo.json",texture:"armory_rpgs:textures/armor/lightbringer_armor.png"}}]
+```
+
+Such pieces use a default pass stack: a plain emissive glow from the texture's `_glowmask` sibling (or the `glowmask` key; skipped when there is none) and a trim pass that draws only when the `trim` key is set. There is no renderer to fall back to, so a missing or broken `model` leaves the item to vanilla rendering (logged once).
 
 Custom layers get the resolved values from the context: `ctx.texture()` is the base texture in effect and `ctx.overrides()` the raw `ArmorOverrides` record (`model`, `texture`, `glowmask`, `trim`, each nullable). A layer that derives an asset name from the base texture should start from `ctx.texture()`, not from the renderer config, so per-stack reskins carry through.
 
