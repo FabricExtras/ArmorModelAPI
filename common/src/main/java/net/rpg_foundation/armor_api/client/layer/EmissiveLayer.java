@@ -39,6 +39,10 @@ import java.util.Optional;
 /// The pass is skipped (once-logged) when the mask file doesn't exist, so the layer is safe to
 /// add unconditionally across a family of sets.
 ///
+/// Per-stack [net.rpg_foundation.armor_api.client.ArmorOverrides] carry through: the composite
+/// is built on the base texture *in effect* ([ArmorRenderContext#texture]), and an overriding
+/// `glowmask` wins over both the constructor mask and the derived `_glowmask` name.
+///
 /// [#emissiveTexture] stays overridable for layers that resolve the glow texture differently.
 @Environment(EnvType.CLIENT)
 public class EmissiveLayer implements ArmorRenderLayer {
@@ -61,9 +65,11 @@ public class EmissiveLayer implements ArmorRenderLayer {
     private final Mode mode;
     private final @Nullable Identifier maskTexture; // null = derive from the renderer's base texture
 
-    /// mask id → id of the baked composite texture (empty = missing/broken, logged once).
+    /// (base, mask) → id of the baked composite texture (empty = missing/broken, logged once).
+    /// Keyed on the pair: with per-stack overrides one mask can sit on several base textures.
     /// Render thread only, like all layer code; reset when the reload generation moves on.
-    private static final Map<Identifier, Optional<Identifier>> BAKED = new HashMap<>();
+    private record CompositeKey(Identifier baseTexture, Identifier maskId) { }
+    private static final Map<CompositeKey, Optional<Identifier>> BAKED = new HashMap<>();
     private static int bakedCacheGeneration = -1;
 
     public EmissiveLayer() {
@@ -128,10 +134,15 @@ public class EmissiveLayer implements ArmorRenderLayer {
                 OverlayTexture.DEFAULT_UV);
     }
 
-    /// The renderable glow texture (already composited), or null to skip the pass.
+    /// The renderable glow texture (already composited), or null to skip the pass. Resolution
+    /// order for the mask: the stack's `glowmask` override, the constructor's explicit mask, the
+    /// `_glowmask` sibling of the base texture in effect.
     protected @Nullable Identifier emissiveTexture(ArmorRenderContext context) {
-        var baseTexture = context.renderer().config().texture();
-        var maskId = maskTexture != null ? maskTexture : glowmaskOf(baseTexture);
+        var baseTexture = context.texture();
+        var overrideMask = context.overrides().glowmask();
+        var maskId = overrideMask != null ? overrideMask
+                : maskTexture != null ? maskTexture
+                : glowmaskOf(baseTexture);
         return bakedEmissiveTexture(baseTexture, maskId);
     }
 
@@ -151,7 +162,8 @@ public class EmissiveLayer implements ArmorRenderLayer {
             BAKED.clear(); // stale entries are re-baked lazily; registerTexture replaces old ids
             bakedCacheGeneration = currentGeneration;
         }
-        return BAKED.computeIfAbsent(maskId, id -> bake(baseTexture, id)).orElse(null);
+        return BAKED.computeIfAbsent(new CompositeKey(baseTexture, maskId), key -> bake(key.baseTexture(), key.maskId()))
+                .orElse(null);
     }
 
     private static Optional<Identifier> bake(Identifier baseTexture, Identifier maskId) {
@@ -191,8 +203,11 @@ public class EmissiveLayer implements ArmorRenderLayer {
                 }
             }
 
+            // Named after both inputs: the same mask may be composited onto several base
+            // textures (per-stack texture overrides), each needing its own runtime texture.
             var compositeId = Identifier.of(ArmorModelApi.MOD_ID,
-                    "emissive/" + maskId.getNamespace() + "/" + maskId.getPath());
+                    "emissive/" + baseTexture.getNamespace() + "/" + baseTexture.getPath()
+                            + "/" + maskId.getNamespace() + "/" + maskId.getPath());
             // The NativeImageBackedTexture takes ownership of the composite image; registering
             // under an existing id replaces (and closes) a previously baked texture.
             MinecraftClient.getInstance().getTextureManager()

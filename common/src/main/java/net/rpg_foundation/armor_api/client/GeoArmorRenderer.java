@@ -11,7 +11,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /// One renderer per visual armor set: which geo model, which base texture, which extra passes.
@@ -49,7 +51,9 @@ public class GeoArmorRenderer {
     ) { }
 
     private final Config config;
-    private @Nullable GeoArmorModel model;
+    /// Lazily created model instances by geo id - the renderer's own plus any [ArmorOverrides]
+    /// model a stack asked for. Null values cache known failures until the next reload.
+    private final Map<Identifier, GeoArmorModel> models = new HashMap<>();
     private int modelGeneration = -1;
 
     public GeoArmorRenderer(Identifier modelId, Identifier texture, List<ArmorRenderLayer> layers) {
@@ -134,18 +138,27 @@ public class GeoArmorRenderer {
         return config;
     }
 
-    /// Null while the geo model is missing or broken (logged by the cache).
+    /// The renderer's own model; null while the geo model is missing or broken (logged by the cache).
     ///
-    /// Render thread only: the cached instance and its generation stamp are deliberately
+    /// Render thread only: the cached instances and their generation stamp are deliberately
     /// unsynchronized, and the returned model is shared mutable state (pose, visibility)
     /// that only means anything mid-render. Registration threads have no business here.
     public @Nullable GeoArmorModel model() {
+        return model(config.modelId());
+    }
+
+    /// The model for an arbitrary geo id rendered through this renderer - how a stack's
+    /// [ArmorOverrides#model] is served. Same caching and threading rules as [#model()].
+    public @Nullable GeoArmorModel model(Identifier modelId) {
         int currentGeneration = GeoModelCache.generation();
-        if (model == null || modelGeneration != currentGeneration) {
-            var template = GeoModelCache.get(config.modelId());
-            model = template != null ? new GeoArmorModel(template.createModel()) : null;
+        if (modelGeneration != currentGeneration) {
+            models.clear();
             modelGeneration = currentGeneration;
         }
-        return model;
+        if (!models.containsKey(modelId)) {
+            var template = GeoModelCache.get(modelId);
+            models.put(modelId, template != null ? new GeoArmorModel(template.createModel()) : null);
+        }
+        return models.get(modelId);
     }
 }

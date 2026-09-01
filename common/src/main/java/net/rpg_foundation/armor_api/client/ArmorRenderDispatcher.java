@@ -19,10 +19,12 @@ import net.minecraft.util.math.ColorHelper;
 /// The one armor render routine, shared verbatim by both platform hooks. Runs inside the
 /// entity feature-render pass, replacing vanilla's `renderArmor` body for registered items:
 ///
-/// 1. pose copy from the entity's posed context model (vanilla would do this too)
-/// 2. slot visibility (incl. the FEET → boot bones mapping vanilla can't express)
-/// 3. base pass - armor cutout render layer, dye color, glint via the armor foil buffer
-/// 4. the renderer's extra layers (trim, glow, ...), each a plain re-render with its own buffer
+/// 1. the stack's [ArmorOverrides] pick the model and base texture in effect (a broken override
+///    model falls back to the renderer's own)
+/// 2. pose copy from the entity's posed context model (vanilla would do this too)
+/// 3. slot visibility (incl. the FEET → boot bones mapping vanilla can't express)
+/// 4. base pass - armor cutout render layer, dye color, glint via the armor foil buffer
+/// 5. the renderer's extra layers (trim, glow, ...), each a plain re-render with its own buffer
 ///
 /// Returns false when nothing was rendered (unregistered item, wrong slot, missing model) so
 /// the NeoForge mixin can leave vanilla rendering untouched in that case.
@@ -49,10 +51,15 @@ public final class ArmorRenderDispatcher {
         if (!(stack.getItem() instanceof ArmorItem armorItem) || armorItem.getSlotType() != slot) {
             return false;
         }
-        var model = renderer.model();
+        var overrides = ArmorOverrides.of(stack);
+        var model = overrides.model() != null ? renderer.model(overrides.model()) : null;
+        if (model == null) {
+            model = renderer.model(); // no override, or a missing/broken one (logged once by the cache)
+        }
         if (model == null) {
             return false; // missing/broken geo asset, already logged by the cache
         }
+        var texture = overrides.textureOr(renderer.config().texture());
 
         contextModel.copyBipedStateTo(model);
         model.applySlotVisibility(slot);
@@ -62,11 +69,12 @@ public final class ArmorRenderDispatcher {
                 : -1;
         var consumer = ItemRenderer.getArmorGlintConsumer(
                 vertexConsumers,
-                RenderLayer.getArmorCutoutNoCull(renderer.config().texture()),
+                RenderLayer.getArmorCutoutNoCull(texture),
                 stack.hasGlint());
         model.render(matrices, consumer, light, OverlayTexture.DEFAULT_UV, color);
 
-        var context = new ArmorRenderContext(matrices, vertexConsumers, stack, entity, slot, light, renderer, model);
+        var context = new ArmorRenderContext(
+                matrices, vertexConsumers, stack, entity, slot, light, renderer, model, texture, overrides);
         for (var layer : renderer.config().layers()) {
             layer.render(context);
         }

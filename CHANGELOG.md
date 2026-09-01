@@ -1,3 +1,11 @@
+# 1.1.0
+
+- Per-item model and texture overrides through the vanilla `minecraft:custom_data` component
+  (`{armor_model_api:{model, texture, glowmask, trim}}`), settable by commands, loot tables,
+  recipes and datapacks - no custom component, the library stays client-side
+- `ArmorRenderContext` carries the base texture in effect (`texture()`) and the stack's `overrides()`;
+  layers deriving assets from the base texture should read it from there
+
 # 1.0.0
 
 Initial release.

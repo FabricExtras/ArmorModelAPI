@@ -10,6 +10,7 @@ Renders armor with **custom geometry** authored in the Bedrock/GeckoLib `.geo.js
 - **Emissive glowmasks** — the hand-authored `_glowmask.png` convention; pixels that stay bright in the dark
 - **Radiant glow** — a high-luminance variant that burns toward white and feeds shader-pack bloom
 - **Custom render layers** — a small interface for adding your own passes (extra overlays, effects)
+- **Per-item overrides** — a stack can swap the model, texture, glowmask or trim art of its registered renderer through the vanilla `custom_data` component: commands, loot tables, recipes and datapacks reskin pieces with no code and no custom component
 - Everything vanilla armor does comes for free: pose and animation following, sneaking/swimming, armor stands, baby mobs, dyed leather color, enchantment glint, the glowing outline effect
 
 ### How it works
@@ -52,7 +53,7 @@ dependencies {
 
 ```properties
 # gradle.properties
-armor_model_api_version = 1.0.0+1.21.1
+armor_model_api_version = 1.1.0+1.21.1
 ```
 
 The common module compiles against the fabric artifact — the standard pattern for consuming multi-loader libraries in Architectury workspaces.
@@ -167,6 +168,32 @@ A model that fails to load logs once and the set falls back as described in Quic
 
 ---
 
+## Item component overrides
+
+A registered piece can carry its own assets in the vanilla **`minecraft:custom_data`** component, under the `armor_model_api` compound. Every key is optional; anything not given comes from the renderer:
+
+```
+/give @p wizards:wizard_robe[minecraft:custom_data={armor_model_api:{
+    model:    "wizards:geo/arcane_robes.geo.json",
+    texture:  "wizards:textures/armor/frost_robe.png",
+    glowmask: "wizards:textures/armor/frost_robe_glowmask.png",
+    trim:     "wizards:armor/trim/spec_robe_generic"
+}}]
+```
+
+| Key | Replaces | Notes |
+|---|---|---|
+| `model` | the renderer's geo model | loaded and cached like any registered model; if it is missing or broken the piece logs once and **falls back to the renderer's own model** |
+| `texture` | the base texture | also becomes the base for the derived `_glowmask` name and for the emissive composite; a missing file shows the missing texture, like vanilla |
+| `glowmask` | the emissive mask | wins over both a constructor-given mask and the derived name |
+| `trim` | the trim sprite base | same `<base>_<material>` / `<base>_<pattern>_<material>` naming as the layer was built with, and it becomes the greyscale fallback; layers built from a custom permutation function ignore it |
+
+The same data can be set by a loot table (`minecraft:set_custom_data` / `set_components`), a recipe result's `components`, or SpellEngine-style component patches — anything that writes item components. Overrides only apply to items that already have a renderer registered; the component decides *which* assets that renderer draws, not *whether* the library takes over the item. Because `custom_data` is an ordinary vanilla component the library stays client-side: nothing is registered, nothing needs to be on the server.
+
+Custom layers get the resolved values from the context: `ctx.texture()` is the base texture in effect and `ctx.overrides()` the raw `ArmorOverrides` record (`model`, `texture`, `glowmask`, `trim`, each nullable). A layer that derives an asset name from the base texture should start from `ctx.texture()`, not from the renderer config, so per-stack reskins carry through.
+
+---
+
 ## Render layers
 
 Layers are extra passes drawn **after** the base texture pass. There are two ways to add them, with different ordering contracts:
@@ -269,7 +296,7 @@ public class EnchantOverlayLayer implements ArmorRenderLayer {
 }
 ```
 
-A pass is just: pick a `RenderLayer`, get a buffer, call `model.render` again. The context carries the posed model (slot visibility already applied), the buffers, stack, entity, slot, and light. `ctx.model().armorBone("armorHead")` gives you a single conventional bone for per-bone passes.
+A pass is just: pick a `RenderLayer`, get a buffer, call `model.render` again. The context carries the posed model (slot visibility already applied), the buffers, stack, entity, slot, light, the base texture in effect (`texture()`) and the stack's overrides. `ctx.model().armorBone("armorHead")` gives you a single conventional bone for per-bone passes.
 
 Added via the fluent `.layer(...)`, a custom pass sorts at `ORDER_OVERLAY` — on top of the built-in glow and trim passes. Override `preferredOrder()` to sit elsewhere in the sorted stack (e.g. below `ORDER_EMISSIVE` for an underlay), or use the explicit-list constructor to place it by hand (the list ignores `preferredOrder()` entirely).
 
