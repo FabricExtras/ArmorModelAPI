@@ -5,6 +5,7 @@ import com.mojang.blaze3d.pipeline.ColorTargetState;
 import com.mojang.blaze3d.pipeline.DepthStencilState;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.CompareOp;
+import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.LayeringTransform;
 import net.minecraft.client.renderer.rendertype.RenderSetup;
@@ -63,10 +64,10 @@ public final class ArmorRenderLayers {
             .withLocation(Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID, "pipeline/radiant_fill"))
             .withShaderDefine("ALPHA_CUTOUT", 0.1F)
             .withShaderDefine("PER_FACE_LIGHTING")
-            .withSampler("Sampler1")
+            .withBindGroupLayout(BindGroupLayouts.SAMPLER1)
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
             .withCull(false)
-            .withDepthStencilState(DepthStencilState.DEFAULT)   // LEQUAL + depth write
+            .withDepthStencilState(DepthStencilState.DEFAULT)   // GEQUAL (reverse-Z since 26.2) + depth write
             .build();
 
     /// Additive burn over the fill; writes no depth - the fill already did, at the same
@@ -75,10 +76,10 @@ public final class ArmorRenderLayers {
             .withLocation(Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID, "pipeline/radiant_burn"))
             .withShaderDefine("ALPHA_CUTOUT", 0.1F)
             .withShaderDefine("PER_FACE_LIGHTING")
-            .withSampler("Sampler1")
+            .withBindGroupLayout(BindGroupLayouts.SAMPLER1)
             .withColorTargetState(new ColorTargetState(BlendFunction.ADDITIVE))
             .withCull(false)
-            .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, false))
+            .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, false))
             .build();
 
     private static final Function<Identifier, RenderType> RADIANT_FILL = Util.memoize(texture ->
