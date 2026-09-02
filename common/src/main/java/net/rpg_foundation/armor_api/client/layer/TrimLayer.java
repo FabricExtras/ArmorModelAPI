@@ -29,7 +29,8 @@ import java.util.function.Function;
 ///
 /// A stack's [net.rpg_foundation.armor_api.client.ArmorOverrides#trim] replaces the base
 /// texture for layers built from one (same naming rule, and it becomes the greyscale fallback);
-/// layers built from a custom permutation function have no base to swap and ignore it.
+/// layers built from a custom permutation function have no base to swap and ignore it. A layer
+/// from [#fromOverrides] has no base of its own and draws only when the stack supplies one.
 ///
 /// ## Third-party trim materials - greyscale fallback
 ///
@@ -43,11 +44,12 @@ import java.util.function.Function;
 /// pass is skipped. Both cases are logged once per resource reload.
 public class TrimLayer implements ArmorRenderLayer {
 
-    private final Function<ArmorTrim, Identifier> texturePermutations;
+    private final @Nullable Function<ArmorTrim, Identifier> texturePermutations; // null = override-only
     private final @Nullable Identifier fallbackTexture; // greyscale base; null = no fallback, skip instead
-    /// Set when built from a base texture (the convention-named layers), so a stack's trim
-    /// override can re-derive the sprite name; null for custom permutation functions.
-    private final @Nullable Identifier baseTexture;
+    /// Whether a stack's trim override may re-derive the sprite name: true for layers built
+    /// from a base texture (the convention-named layers) and for [#fromOverrides]; false for
+    /// custom permutation functions, which have no base to swap.
+    private final boolean overridable;
     private final boolean supportPatterns;
 
     /// Permuted sprite ids already reported missing (log once). Render thread only; reset when
@@ -60,10 +62,13 @@ public class TrimLayer implements ArmorRenderLayer {
     }
 
     public TrimLayer(Identifier baseTexture, boolean supportPatterns) {
-        this.texturePermutations = trim -> spriteId(baseTexture, supportPatterns, trim);
-        this.fallbackTexture = baseTexture;
-        this.baseTexture = baseTexture;
-        this.supportPatterns = supportPatterns;
+        this(trim -> spriteId(baseTexture, supportPatterns, trim), baseTexture, true, supportPatterns);
+    }
+
+    /// A trim pass with no base texture of its own: it draws only for stacks whose overrides
+    /// name a `trim` base (the takeover renderer's trim pass).
+    public static TrimLayer fromOverrides(boolean supportPatterns) {
+        return new TrimLayer(null, null, true, supportPatterns);
     }
 
     /// The conventional sprite name for a trim on a base texture.
@@ -81,10 +86,19 @@ public class TrimLayer implements ArmorRenderLayer {
     }
 
     public TrimLayer(Function<ArmorTrim, Identifier> texturePermutations, @Nullable Identifier fallbackTexture) {
+        this(texturePermutations, fallbackTexture, false, false);
+    }
+
+    private TrimLayer(
+            @Nullable Function<ArmorTrim, Identifier> texturePermutations,
+            @Nullable Identifier fallbackTexture,
+            boolean overridable,
+            boolean supportPatterns
+    ) {
         this.texturePermutations = texturePermutations;
         this.fallbackTexture = fallbackTexture;
-        this.baseTexture = null;
-        this.supportPatterns = false;
+        this.overridable = overridable;
+        this.supportPatterns = supportPatterns;
     }
 
     @Override
@@ -100,9 +114,14 @@ public class TrimLayer implements ArmorRenderLayer {
         }
         var atlas = MinecraftClient.getInstance().getAtlasManager().getAtlasTexture(Atlases.ARMOR_TRIMS);
         var overrideBase = context.overrides().trim();
-        var sprite = overrideBase != null && baseTexture != null
-                ? resolveSprite(atlas, spriteId(overrideBase, supportPatterns, trim), overrideBase)
-                : resolveSprite(atlas, texturePermutations.apply(trim), fallbackTexture);
+        Sprite sprite;
+        if (overrideBase != null && overridable) {
+            sprite = resolveSprite(atlas, spriteId(overrideBase, supportPatterns, trim), overrideBase);
+        } else if (texturePermutations != null) {
+            sprite = resolveSprite(atlas, texturePermutations.apply(trim), fallbackTexture);
+        } else {
+            return; // override-only layer, and the stack supplies no trim base
+        }
         if (sprite == null) {
             return;
         }

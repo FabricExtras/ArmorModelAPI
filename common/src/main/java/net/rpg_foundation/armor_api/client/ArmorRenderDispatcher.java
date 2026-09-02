@@ -23,8 +23,13 @@ import net.minecraft.registry.tag.ItemTags;
 /// 3. base pass - armor cutout render layer, dye color, then the armor glint pass
 /// 4. the renderer's extra layers (trim, glow, ...), each a plain re-submit with its own layer
 ///
-/// Returns false when nothing was rendered (unregistered item, wrong slot, missing model) so
-/// the NeoForge mixin can leave vanilla rendering untouched in that case.
+/// An item without a renderer is still rendered when its stack's overrides name both a model
+/// and a texture ([ArmorOverrides#takesOver]) - through the shared
+/// [ArmorRenderers#takeoverRenderer]; there a broken model is left to vanilla instead of falling
+/// back, since the takeover renderer has no model of its own.
+///
+/// Returns false when nothing was rendered (unregistered item without takeover data, wrong slot,
+/// missing model) so the platform mixins can leave vanilla rendering untouched in that case.
 public final class ArmorRenderDispatcher {
 
     private ArmorRenderDispatcher() { }
@@ -38,9 +43,15 @@ public final class ArmorRenderDispatcher {
             int light,
             BipedEntityModel<BipedEntityRenderState> contextModel
     ) {
+        var overrides = ArmorOverrides.of(stack);
         var renderer = ArmorRenderers.get(stack.getItem());
+        boolean takeover = false;
         if (renderer == null) {
-            return false;
+            if (!overrides.takesOver()) {
+                return false;
+            }
+            renderer = ArmorRenderers.takeoverRenderer();
+            takeover = true;
         }
         // Vanilla's own guard runs after the hook point, so it is replicated here: a chestplate
         // held in the head slot must not render as armor.
@@ -48,14 +59,13 @@ public final class ArmorRenderDispatcher {
         if (equippable == null || equippable.slot() != slot) {
             return false;
         }
-        var overrides = ArmorOverrides.of(stack);
         // Players need the PlayerEntityModel variant so player-animation libraries pose the armor too
         boolean player = state instanceof PlayerEntityRenderState;
         GeoArmorBones model = null;
         if (overrides.model() != null) {
             model = player ? renderer.playerModel(overrides.model(), slot) : renderer.model(overrides.model(), slot);
         }
-        if (model == null) {
+        if (model == null && !takeover) {
             // no override, or a missing/broken one (logged once by the cache) → the renderer's own
             model = player ? renderer.playerModel(slot) : renderer.model(slot);
         }

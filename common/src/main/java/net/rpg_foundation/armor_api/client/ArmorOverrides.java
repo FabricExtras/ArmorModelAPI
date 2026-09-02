@@ -25,11 +25,13 @@ import org.jetbrains.annotations.Nullable;
 /// }}]
 /// ```
 ///
-/// Overrides only apply to items that already have a renderer ([ArmorRenderers#register]); the
-/// vanilla data drives *which* assets that renderer uses, not *whether* the library renders the item.
-/// An override model that is missing or broken logs once and the piece falls back to the
-/// renderer's own model; an override texture is used as-is (a missing one shows the missing
-/// texture, like any vanilla texture).
+/// On an item with a registered renderer ([ArmorRenderers#register]) the data drives *which*
+/// assets that renderer uses: an override model that is missing or broken logs once and the piece
+/// falls back to the renderer's own model; an override texture is used as-is (a missing one shows
+/// the missing texture, like any vanilla texture). A stack that names both `model` and `texture`
+/// also **takes over an unregistered item** (any vanilla or third-party armor piece) - it renders
+/// through [ArmorRenderers#takeoverRenderer] with the default pass stack; there a broken model
+/// leaves the item to vanilla rendering.
 ///
 /// Why `custom_data`: component types cross the wire as raw registry ids, so a client-only mod
 /// cannot add one without breaking the registry sync against vanilla servers. `custom_data` exists
@@ -67,6 +69,12 @@ public record ArmorOverrides(
 
     public boolean isEmpty() {
         return model == null && texture == null && glowmask == null && trim == null;
+    }
+
+    /// Whether this data is complete enough to render an item that has no renderer of its own:
+    /// both the geo model and the base texture are given.
+    public boolean takesOver() {
+        return model != null && texture != null;
     }
 
     /// `value` unless this stack overrides the given asset.
