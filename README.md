@@ -10,7 +10,7 @@ Renders armor with **custom geometry** authored in the Bedrock/GeckoLib `.geo.js
 - **Emissive glowmasks** — the hand-authored `_glowmask.png` convention; pixels that stay bright in the dark
 - **Radiant glow** — a high-luminance variant that burns toward white and feeds shader-pack bloom
 - **Custom render layers** — a small interface for adding your own passes (extra overlays, effects)
-- **Per-item overrides** — a stack can swap the model, texture, glowmask or trim art of its registered renderer through the vanilla `custom_data` component: commands, loot tables, recipes and datapacks reskin pieces with no code and no custom component
+- **Per-item overrides** — a stack can carry its own model, texture, glowmask and trim art in the vanilla `custom_data` component: commands, loot tables, recipes and datapacks reskin registered pieces, or give **any** armor item a geo look, with no code and no custom component
 - Everything vanilla armor does comes for free: pose and animation following, sneaking/swimming, armor stands, baby mobs, dyed leather color, enchantment glint, the glowing outline effect
 
 ### How it works
@@ -53,7 +53,7 @@ dependencies {
 
 ```properties
 # gradle.properties
-armor_model_api_version = 1.1.0+26.1.2
+armor_model_api_version = <version>+<minecraft>   # e.g. the newest entry on the Modrinth versions page
 ```
 
 The common module compiles against the fabric artifact — the standard pattern for consuming multi-loader libraries in Architectury workspaces.
@@ -70,17 +70,12 @@ Declare the runtime dependency in your mod metadata:
 [[dependencies.<your_mod_id>]]
 modId = "armor_model_api"
 type = "required"
-versionRange = "[1.0,)"
+versionRange = "[<version you built against>,)"
 ```
 
 **Loader notes.** On Fabric the library uses Fabric API (`fabric-rendering-v1`, `fabric-resource-loader-v0`) — any mod already depending on `fabric-api` is covered. On NeoForge nothing extra is needed. For local snapshot builds, `./gradlew publishToMavenLocal` in this repo and swap the Modrinth coordinates for `net.rpg_foundation:armor_model_api-<loader>:<version>` from `mavenLocal()`.
 
-| | |
-|---|---|
-| Minecraft | 26.1.x |
-| Fabric Loader | ≥ 0.19.3, with Fabric API |
-| NeoForge | ≥ 26.1 |
-| Java | 25 |
+Supported Minecraft, loader and Java versions are per release: read them off the release's version tags on Modrinth / CurseForge (or the mod metadata inside the jar) rather than from this document. The library follows the game version in its `+<minecraft>` suffix; pick the release that matches your workspace.
 
 ---
 
@@ -170,16 +165,22 @@ A model that fails to load logs once and the set falls back as described in Quic
 
 ## Item component overrides
 
-A registered piece can carry its own assets in the vanilla **`minecraft:custom_data`** component, under the `armor_model_api` compound. Every key is optional; anything not given comes from the renderer:
+Any armor stack can carry its own assets in the vanilla **`minecraft:custom_data`** component, under an `armor_model_api` compound. Because `custom_data` is an ordinary vanilla component, the library stays client-side — nothing is registered, and nothing needs to be installed on the server. The data can be set by anything that writes item components: `/give`, a command block, a loot table (`minecraft:set_custom_data` / `set_components`), a recipe result's `components`, or a component patch applied by another mod.
 
 ```
-/give @p wizards:wizard_robe[minecraft:custom_data={armor_model_api:{
-    model:    "wizards:geo/arcane_robes.geo.json",
-    texture:  "wizards:textures/armor/frost_robe.png",
-    glowmask: "wizards:textures/armor/frost_robe_glowmask.png",
-    trim:     "wizards:armor/trim/spec_robe_generic"
+/give @p <item>[minecraft:custom_data={armor_model_api:{
+    model:    "<mod>:geo/<set>.geo.json",              // geo model
+    texture:  "<mod>:textures/armor/<set>.png",        // base texture
+    glowmask: "<mod>:textures/armor/<set>_glowmask.png", // emissive mask (optional)
+    trim:     "<mod>:armor/trim/<set>_generic"         // trim sprite base (optional)
 }}]
 ```
+
+All four keys are optional; what they do depends on whether the item already has a renderer.
+
+### Reskinning a registered piece
+
+On an item registered through `ArmorRenderers.register`, the component decides *which* assets that renderer draws. Anything not given comes from the renderer.
 
 | Key | Replaces | Notes |
 |---|---|---|
@@ -188,9 +189,33 @@ A registered piece can carry its own assets in the vanilla **`minecraft:custom_d
 | `glowmask` | the emissive mask | wins over both a constructor-given mask and the derived name |
 | `trim` | the trim sprite base | same `<base>_<material>` / `<base>_<pattern>_<material>` naming as the layer was built with, and it becomes the greyscale fallback; layers built from a custom permutation function ignore it |
 
-The same data can be set by a loot table (`minecraft:set_custom_data` / `set_components`), a recipe result's `components`, or SpellEngine-style component patches — anything that writes item components. Overrides only apply to items that already have a renderer registered; the component decides *which* assets that renderer draws, not *whether* the library takes over the item. Because `custom_data` is an ordinary vanilla component the library stays client-side: nothing is registered, nothing needs to be on the server.
+The renderer's pass stack (glow mode, trim naming, custom layers) is unchanged — only the assets those passes read are swapped.
 
-Custom layers get the resolved values from the context: `ctx.texture()` is the base texture in effect and `ctx.overrides()` the raw `ArmorOverrides` record (`model`, `texture`, `glowmask`, `trim`, each nullable). A layer that derives an asset name from the base texture should start from `ctx.texture()`, not from the renderer config, so per-stack reskins carry through.
+### Taking over any armor item
+
+A stack that names **both `model` and `texture`** renders through the library even when nobody registered the item: a vanilla helmet, another mod's chestplate, anything the game treats as armor. This is what lets a datapack hand out geo-looking gear without a line of code:
+
+```
+/give @p minecraft:turtle_helmet[minecraft:custom_data={armor_model_api:{model:"armory_rpgs:geo/lightbringer_armor.geo.json",texture:"armory_rpgs:textures/armor/lightbringer_armor.png"}}]
+```
+
+Taken-over pieces draw with a **default pass stack**: a plain emissive glow from the texture's `_glowmask` sibling (or the `glowmask` key), skipped when there is no mask; and a trim pass that draws only when the `trim` key is set. Radiant glow and custom layers are renderer configuration and are not available this way. There is no renderer to fall back to, so a missing or broken `model` leaves the item to **vanilla rendering** (logged once). Registered items are never affected by this path.
+
+### Where the assets come from
+
+The identifiers are resolved by the **client's** resource manager, exactly like a registered set's assets: the geo file, textures and trim sprites must exist in a mod or resource pack loaded on the client that renders the piece. A datapack can carry the data, but not the art — ship the assets in a resource pack or a mod. Referencing another mod's assets (as in the example above) works only where that mod is installed. When a model cannot be found the log says so:
+
+```
+Geo model '<id>' not found; its armor will not render
+```
+
+For a registered piece that means the renderer's own model is drawn instead; for a takeover it means the item rendered as vanilla. A missing glowmask or trim sprite is likewise logged once and that pass is skipped.
+
+### Notes for layer authors
+
+Custom layers get the resolved values from the context: `ctx.texture()` is the base texture in effect and `ctx.overrides()` the raw `ArmorOverrides` record (`model`, `texture`, `glowmask`, `trim`, each nullable; `takesOver()` tells the two modes apart). A layer that derives an asset name from the base texture should start from `ctx.texture()`, not from the renderer config, so per-stack reskins carry through. `TrimLayer.fromOverrides(...)` builds a trim pass with no base of its own that draws only for stacks carrying a `trim` key — the takeover stack uses it.
+
+The component is parsed once per `custom_data` instance (identity-cached; the instance is replaced when the data changes) and the models and composited glow textures are cached like a registered set's, so the per-frame cost is a couple of map lookups per piece.
 
 ---
 

@@ -19,6 +19,9 @@
       "net.rpg_foundation.armor_api.fabric.client.ArmorModelApiFabricClient"
     ]
   },
+  "mixins": [
+    "armor_model_api-fabric.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.19.3",
     "minecraft": ">=${minecraft_min_version}",

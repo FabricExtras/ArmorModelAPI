@@ -1,11 +1,15 @@
 package net.rpg_foundation.armor_api.client;
 
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.ItemLike;
 import net.rpg_foundation.armor_api.ArmorModelApi;
+import net.rpg_foundation.armor_api.client.layer.EmissiveLayer;
+import net.rpg_foundation.armor_api.client.layer.TrimLayer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -34,6 +38,15 @@ public final class ArmorRenderers {
 
     private static @Nullable BiConsumer<Item, GeoArmorRenderer> registrationListener;
 
+    /// Renderer for stacks whose [ArmorOverrides] take over an item nobody registered: the
+    /// stack supplies model and texture, so the config ids are never read; the pass stack is the
+    /// default one - emissive glow from the texture's `_glowmask` sibling (skipped when there is
+    /// none) and a trim pass driven purely by the stack's `trim` override.
+    private static final GeoArmorRenderer TAKEOVER = new GeoArmorRenderer(
+            Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID, "takeover"),
+            Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID, "takeover"),
+            List.of(new EmissiveLayer(), TrimLayer.fromOverrides(false)));
+
     private ArmorRenderers() { }
 
     /// Registers one renderer (one shared instance) for all given items - typically the four
@@ -56,6 +69,12 @@ public final class ArmorRenderers {
 
     public static @Nullable GeoArmorRenderer get(Item item) {
         return renderers.get(item);
+    }
+
+    /// The shared renderer behind data-driven takeovers of unregistered items (see
+    /// [ArmorOverrides#takesOver]).
+    public static GeoArmorRenderer takeoverRenderer() {
+        return TAKEOVER;
     }
 
     /// Platform-bridge hook: replays all existing registrations, then receives future ones.
