@@ -1,0 +1,64 @@
+plugins {
+    id 'com.gradleup.shadow'
+}
+
+architectury {
+    platformSetupLoomIde()
+    forge()
+}
+
+configurations {
+    common {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentForge.extendsFrom common
+
+    shadowBundle {
+        canBeResolved = true
+        canBeConsumed = false
+    }
+}
+
+// Subprojects configure alphabetically (example-* before forge), so force the API project
+// to configure first before referencing its shadowJar task. Inside dependencies{}
+// `project(...)` is a dependency notation, hence the resolution out here.
+evaluationDependsOn(':forge')
+def apiShadowJar = rootProject.project(':forge').tasks.named('shadowJar')
+
+dependencies {
+    forge "net.minecraftforge:forge:$rootProject.forge_version"
+
+    common(project(path: ':example-common', configuration: 'namedElements')) { transitive = false }
+    shadowBundle project(path: ':example-common', configuration: 'transformProductionForge')
+
+    // Compile against the API (compileOnly: see example/common/build.gradle)...
+    compileOnly(project(path: ':common', configuration: 'namedElements')) { transitive = false }
+
+    // ...and RUN with the API as a real, self-contained mod via its dev-shadow jar.
+    localRuntime files(apiShadowJar.flatMap { it.archiveFile })
+}
+
+tasks.named('runClient') { dependsOn apiShadowJar }
+
+processResources {
+    inputs.property 'version', project.version
+
+    filesMatching('META-INF/mods.toml') {
+        expand version: inputs.properties.version
+    }
+}
+
+shadowJar {
+    configurations = [project.configurations.shadowBundle]
+    archiveClassifier = 'dev-shadow'
+}
+
+remapJar {
+    inputFile.set shadowJar.archiveFile
+}
+
+// Dev-only module — never publish.
+tasks.withType(AbstractPublishToMaven).configureEach { enabled = false }

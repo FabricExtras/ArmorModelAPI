@@ -1,0 +1,33 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+
+[[mods]]
+modId = "armor_model_api_example"
+version = "${version}"
+displayName = "Armor Model API Example"
+authors = "Daedelus"
+description = '''
+Example consumer of the Armor Model API: renders custom geometry, glowmasks, radiant glow and trims on the vanilla armor sets.
+'''
+
+[[dependencies.armor_model_api_example]]
+modId = "armor_model_api"
+mandatory = true
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.armor_model_api_example]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.armor_model_api_example]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,)"
+ordering = "NONE"
+side = "BOTH"

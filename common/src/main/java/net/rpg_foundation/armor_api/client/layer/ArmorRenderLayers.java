@@ -17,7 +17,8 @@ import java.util.function.Function;
 
 /// Custom render layers for armor passes. Extends RenderLayer for access to the protected
 /// phase constants and parameter builder (the standard pattern for mod-defined render layers,
-/// same as SpellEngine's CustomLayers); RenderLayer.of itself comes via the access widener.
+/// same as SpellEngine's CustomLayers); RenderLayer.of itself comes via the access widener
+/// (converted to an access transformer on Forge).
 @Environment(EnvType.CLIENT)
 public final class ArmorRenderLayers extends RenderLayer {
 

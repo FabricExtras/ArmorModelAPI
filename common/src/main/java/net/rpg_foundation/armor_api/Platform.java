@@ -7,14 +7,14 @@ import dev.architectury.injectables.annotations.ExpectPlatform;
 /// Architectury's @ExpectPlatform transformer wires in at build time.
 public class Platform {
     public static final boolean Fabric;
-    public static final boolean NeoForge;
+    public static final boolean Forge;
 
     static {
         Fabric = getPlatformType() == Type.FABRIC;
-        NeoForge = getPlatformType() == Type.NEOFORGE;
+        Forge = getPlatformType() == Type.FORGE;
     }
 
-    public enum Type { FABRIC, NEOFORGE }
+    public enum Type { FABRIC, FORGE }
 
     @ExpectPlatform
     protected static Type getPlatformType() {
@@ -26,7 +26,7 @@ public class Platform {
 
         /// Whether the game is running in a development environment (dev workspace / loom run),
         /// as opposed to a packaged production install. Fabric: `FabricLoader.isDevelopmentEnvironment()`;
-        /// NeoForge: `!FMLLoader.isProduction()`. Kept here so `common` needs no loader API for the check.
+        /// Forge: `!FMLLoader.isProduction()`. Kept here so `common` needs no loader API for the check.
         boolean isDevelopmentEnvironment();
     }
 

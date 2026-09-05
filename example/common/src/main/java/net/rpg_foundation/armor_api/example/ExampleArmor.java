@@ -30,7 +30,7 @@ import java.util.List;
 ///   rather than assumed.
 ///
 /// Trim test: trim any piece at a smithing table, or:
-///   /give @p iron_chestplate[trim={material:"minecraft:redstone",pattern:"minecraft:sentry"}]
+///   /give @p iron_chestplate{Trim:{material:"minecraft:redstone",pattern:"minecraft:sentry"}}
 /// (patterns are ignored - material-only permutations, like the Wizards sets). A trim material
 /// added by a third-party mod exercises TrimLayer's greyscale fallback.
 ///
@@ -47,45 +47,45 @@ public final class ExampleArmor {
         ExampleArmorMod.LOGGER.info("Registering example armor renderers on vanilla armor sets");
         ArmorRenderers.register(
                 new GeoArmorRenderer(
-                        Identifier.of(ExampleArmorMod.MOD_ID, "geo/dev_test.geo.json"),
-                        Identifier.of(ExampleArmorMod.MOD_ID, "textures/armor/dev_test.png"),
+                        new Identifier(ExampleArmorMod.MOD_ID, "geo/dev_test.geo.json"),
+                        new Identifier(ExampleArmorMod.MOD_ID, "textures/armor/dev_test.png"),
                         List.of(
                                 new EmissiveLayer(), // no glowmask file → pass skips itself; proves the guard
-                                new TrimLayer(Identifier.of(ExampleArmorMod.MOD_ID, "armor/trim/dev_test_generic"), false))),
+                                new TrimLayer(new Identifier(ExampleArmorMod.MOD_ID, "armor/trim/dev_test_generic"), false))),
                 Items.IRON_HELMET, Items.IRON_CHESTPLATE, Items.IRON_LEGGINGS, Items.IRON_BOOTS);
 
         ArmorRenderers.register(
                 new GeoArmorRenderer(
-                        Identifier.of(ExampleArmorMod.MOD_ID, "geo/copyright_justicar_armor.geo.json"),
-                        Identifier.of(ExampleArmorMod.MOD_ID, "textures/armor/copyright_justicar_armor.png"),
+                        new Identifier(ExampleArmorMod.MOD_ID, "geo/copyright_justicar_armor.geo.json"),
+                        new Identifier(ExampleArmorMod.MOD_ID, "textures/armor/copyright_justicar_armor.png"),
                         List.of(
                                 new EmissiveLayer(),
-                                new TrimLayer(Identifier.of(ExampleArmorMod.MOD_ID, "armor/trim/copyright_justicar_armor_generic"), false))),
+                                new TrimLayer(new Identifier(ExampleArmorMod.MOD_ID, "armor/trim/copyright_justicar_armor_generic"), false))),
                 Items.DIAMOND_HELMET, Items.DIAMOND_CHESTPLATE, Items.DIAMOND_LEGGINGS, Items.DIAMOND_BOOTS);
 
         ArmorRenderers.register(
                 new GeoArmorRenderer(
-                        Identifier.of(ExampleArmorMod.MOD_ID, "geo/copyright_lightbringer_armor.geo.json"),
-                        Identifier.of(ExampleArmorMod.MOD_ID, "textures/armor/copyright_lightbringer_armor.png"),
+                        new Identifier(ExampleArmorMod.MOD_ID, "geo/copyright_lightbringer_armor.geo.json"),
+                        new Identifier(ExampleArmorMod.MOD_ID, "textures/armor/copyright_lightbringer_armor.png"),
                         List.of(
                                 new EmissiveLayer(Mode.RADIANT),
-                                new TrimLayer(Identifier.of(ExampleArmorMod.MOD_ID, "armor/trim/copyright_lightbringer_armor_generic"), false))),
+                                new TrimLayer(new Identifier(ExampleArmorMod.MOD_ID, "armor/trim/copyright_lightbringer_armor_generic"), false))),
                 Items.NETHERITE_HELMET, Items.NETHERITE_CHESTPLATE, Items.NETHERITE_LEGGINGS, Items.NETHERITE_BOOTS);
 
         ArmorRenderers.register(
                 new GeoArmorRenderer(
-                        Identifier.of(ExampleArmorMod.MOD_ID, "geo/copyright_spellblade_armor.geo.json"),
-                        Identifier.of(ExampleArmorMod.MOD_ID, "textures/armor/copyright_spellblade_armor.png"),
+                        new Identifier(ExampleArmorMod.MOD_ID, "geo/copyright_spellblade_armor.geo.json"),
+                        new Identifier(ExampleArmorMod.MOD_ID, "textures/armor/copyright_spellblade_armor.png"),
                         List.of(new EmissiveLayer())), // no glowmask → skip-guard path
                 Items.GOLDEN_HELMET, Items.GOLDEN_CHESTPLATE, Items.GOLDEN_LEGGINGS, Items.GOLDEN_BOOTS);
 
         ArmorRenderers.register(
                 new GeoArmorRenderer(
-                        Identifier.of(ExampleArmorMod.MOD_ID, "geo/copyright_wizard_robes.geo.json"),
-                        Identifier.of(ExampleArmorMod.MOD_ID, "textures/armor/copyright_wizard_robe.png"),
+                        new Identifier(ExampleArmorMod.MOD_ID, "geo/copyright_wizard_robes.geo.json"),
+                        new Identifier(ExampleArmorMod.MOD_ID, "textures/armor/copyright_wizard_robe.png"),
                         List.of(
                                 new EmissiveLayer(), // no glowmask → skip-guard path
-                                new TrimLayer(Identifier.of(ExampleArmorMod.MOD_ID, "armor/trim/copyright_wizard_robe_generic"), false))),
+                                new TrimLayer(new Identifier(ExampleArmorMod.MOD_ID, "armor/trim/copyright_wizard_robe_generic"), false))),
                 Items.CHAINMAIL_HELMET, Items.CHAINMAIL_CHESTPLATE, Items.CHAINMAIL_LEGGINGS, Items.CHAINMAIL_BOOTS);
     }
 }

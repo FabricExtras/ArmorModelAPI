@@ -27,10 +27,10 @@ import java.util.function.Function;
 ///
 /// ```java
 /// GeoArmorRenderer.of(
-///         Identifier.of(MOD_ID, "geo/crimson_plate.geo.json"),
-///         Identifier.of(MOD_ID, "textures/armor/crimson_plate.png"))
+///         new Identifier(MOD_ID, "geo/crimson_plate.geo.json"),
+///         new Identifier(MOD_ID, "textures/armor/crimson_plate.png"))
 ///     .radiant()
-///     .trim(Identifier.of(MOD_ID, "armor/trim/crimson_generic"), false);
+///     .trim(new Identifier(MOD_ID, "armor/trim/crimson_generic"), false);
 /// ```
 ///
 /// The fluent pass methods keep the passes sorted by [ArmorRenderLayer#preferredOrder] (glow under trim

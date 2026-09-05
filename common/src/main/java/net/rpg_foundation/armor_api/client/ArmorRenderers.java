@@ -13,18 +13,18 @@ import java.util.function.BiConsumer;
 
 /// The renderer registry - the single source of truth for which items render with which
 /// [GeoArmorRenderer]. Read on the render thread every armor render; written during client
-/// init, which on NeoForge means **concurrently** - mod constructors and client-setup handlers
+/// init, which on Forge means **concurrently** - mod constructors and client-setup handlers
 /// run on a parallel dispatch pool, so several content mods may register at the same time.
 /// (AzureLib Armor's registry was a bare HashMap written from those threads; a torn `put`
 /// could silently drop a set's renderer for the whole session - the "random armor failed to
-/// load on NeoForge" bug. This registry is built not to have that failure mode.)
+/// load on (Neo)Forge" bug. This registry is built not to have that failure mode.)
 ///
 /// Concurrency scheme: copy-on-write. Writers serialize on the class lock and publish a fresh
 /// immutable snapshot through a volatile field; the render-thread read is a single volatile
 /// load with no locking, and the happens-before edge of the volatile guarantees a published
 /// registration is visible - no reliance on the mod loader's own joins.
 ///
-/// Platform bridges consume it differently: the NeoForge mixin queries [#get] per render;
+/// Platform bridges consume it differently: the Forge mixin queries [#get] per render;
 /// the Fabric bridge mirrors every entry into Fabric API's own ArmorRenderer registry via
 /// [#setRegistrationListener] (existing entries are replayed, so bridge and content-mod
 /// init order doesn't matter).

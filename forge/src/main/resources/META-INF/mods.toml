@@ -1,0 +1,27 @@
+modLoader = "javafml"
+loaderVersion = "[47,)"
+license = "MIT"
+
+[[mods]]
+modId = "armor_model_api"
+version = "${version}"
+displayName = "Armor Model API"
+authors = "Daedelus"
+logoFile = "assets/armor_model_api/icon.png"
+description = '''
+Renders Bedrock/GeckoLib geo armor models through the vanilla armor pipeline.
+'''
+
+[[dependencies.armor_model_api]]
+modId = "forge"
+mandatory = true
+versionRange = "[47,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.armor_model_api]]
+modId = "minecraft"
+mandatory = true
+versionRange = "[1.20.1,)"
+ordering = "NONE"
+side = "BOTH"

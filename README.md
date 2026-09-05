@@ -1,6 +1,6 @@
 # Armor Model API
 
-Renders armor with **custom geometry** authored in the Bedrock/GeckoLib `.geo.json` format, through the **vanilla armor rendering pipeline**. For Minecraft **1.21.1**, on **Fabric** and **NeoForge**.
+Renders armor with **custom geometry** authored in the Bedrock/GeckoLib `.geo.json` format, through the **vanilla armor rendering pipeline**. For Minecraft **1.20.1**, on **Fabric** and **Forge**.
 
 ## Capabilities
 
@@ -15,7 +15,7 @@ Renders armor with **custom geometry** authored in the Bedrock/GeckoLib `.geo.js
 ### How it works
 
 - **Loading** — on resource load (and every F3+T reload), each registered `.geo.json` is parsed and baked **once** into a vanilla `ModelPart` tree (the same `TexturedModelData` every vanilla entity model is built from), cached until the next reload. Textures are plain resources, resolved by the render layers on demand — nothing is preprocessed.
-- **Hooking in** — when an armor piece is about to render, the library steps in per registered item: on Fabric through Fabric API's `ArmorRenderer` hook, on NeoForge through a small equivalent mixin. Vanilla's overlay rendering is skipped for that piece and the dispatcher renders the baked model instead — vanilla pose copied on, slot visibility applied. Unregistered items are untouched.
+- **Hooking in** — when an armor piece is about to render, the library steps in per registered item: on Fabric through Fabric API's `ArmorRenderer` hook, on Forge through a small equivalent mixin. Vanilla's overlay rendering is skipped for that piece and the dispatcher renders the baked model instead — vanilla pose copied on, slot visibility applied. Unregistered items are untouched.
 - **Pass order** — each piece draws as a stack of passes over the same model: **base texture → your render layers** (glow, then trim so it lands on top), with enchantment glint riding the base pass. Renderers built through the fluent API keep the layers sorted into that stack automatically; a renderer constructed with an explicit layer list draws them in list order (see [Render layers](#render-layers)). Every extra pass is just the model rendered again with a different render layer and buffer.
 
 From bake to buffer this is 100% the vanilla code path — the same pose copy, render layers, and buffers vanilla armor uses. That is the whole compatibility and performance story: Sodium, Iris, and anything else that works with vanilla armor sees ordinary vanilla model rendering. There is no custom vertex pipeline.
@@ -36,7 +36,7 @@ repositories {
 }
 ```
 
-Versions are published per loader, named `<version>+<minecraft>-<loader>`. In an Architectury (common/fabric/neoforge) workspace:
+Versions are published per loader, named `<version>+<minecraft>-<loader>`. In an Architectury (common/fabric/forge) workspace:
 
 ```gradle
 // common/build.gradle and fabric/build.gradle
@@ -44,15 +44,15 @@ dependencies {
     modImplementation("maven.modrinth:armor-model-api:${project.armor_model_api_version}-fabric")
 }
 
-// neoforge/build.gradle
+// forge/build.gradle
 dependencies {
-    modImplementation("maven.modrinth:armor-model-api:${project.armor_model_api_version}-neoforge")
+    modImplementation("maven.modrinth:armor-model-api:${project.armor_model_api_version}-forge")
 }
 ```
 
 ```properties
 # gradle.properties
-armor_model_api_version = 1.0.0+1.21.1
+armor_model_api_version = 1.0.0.001+1.20.1
 ```
 
 The common module compiles against the fabric artifact — the standard pattern for consuming multi-loader libraries in Architectury workspaces.
@@ -65,21 +65,21 @@ Declare the runtime dependency in your mod metadata:
 ```
 
 ```toml
-# neoforge.mods.toml
+# mods.toml
 [[dependencies.<your_mod_id>]]
 modId = "armor_model_api"
-type = "required"
+mandatory = true
 versionRange = "[1.0,)"
 ```
 
-**Loader notes.** On Fabric the library uses Fabric API (`fabric-rendering-v1`, `fabric-resource-loader-v0`) — any mod already depending on `fabric-api` is covered. On NeoForge nothing extra is needed. For local snapshot builds, `./gradlew publishToMavenLocal` in this repo and swap the Modrinth coordinates for `net.rpg_foundation:armor_model_api-<loader>:<version>` from `mavenLocal()`.
+**Loader notes.** On Fabric the library uses Fabric API (`fabric-rendering-v1`, `fabric-resource-loader-v0`) — any mod already depending on `fabric-api` is covered. On Forge nothing extra is needed. For local snapshot builds, `./gradlew publishToMavenLocal` in this repo and swap the Modrinth coordinates for `net.rpg_foundation:armor_model_api-<loader>:<version>` from `mavenLocal()`.
 
 | | |
 |---|---|
-| Minecraft | 1.21.1 |
-| Fabric Loader | ≥ 0.16.0, with Fabric API |
-| NeoForge | ≥ 21.1 |
-| Java | 21 |
+| Minecraft | 1.20.1 |
+| Fabric Loader | ≥ 0.15.0, with Fabric API |
+| Forge | ≥ 47 |
+| Java | 17 |
 
 ---
 
@@ -108,8 +108,8 @@ import net.rpg_foundation.armor_api.client.GeoArmorRenderer;
 
 ArmorRenderers.register(
     GeoArmorRenderer.of(
-        Identifier.of(MOD_ID, "geo/crimson_plate.geo.json"),
-        Identifier.of(MOD_ID, "textures/armor/crimson_plate.png")),
+        new Identifier(MOD_ID, "geo/crimson_plate.geo.json"),
+        new Identifier(MOD_ID, "textures/armor/crimson_plate.png")),
     MyItems.CRIMSON_HELMET, MyItems.CRIMSON_CHESTPLATE,
     MyItems.CRIMSON_LEGGINGS, MyItems.CRIMSON_BOOTS);
 ```
@@ -118,7 +118,7 @@ One renderer instance serves the whole set; registration is safe from any mod-in
 
 ### 3. Result
 
-Wearing any registered piece renders your geometry in place of the vanilla overlay, for exactly the equipped slots. If the geo file is missing or broken, the error is logged once and the item **falls back to vanilla armor rendering** (on NeoForge; on Fabric the piece renders nothing) — a broken resource pack degrades, it doesn't crash.
+Wearing any registered piece renders your geometry in place of the vanilla overlay, for exactly the equipped slots. If the geo file is missing or broken, the error is logged once and the item **falls back to vanilla armor rendering** (on Forge; on Fabric the piece renders nothing) — a broken resource pack degrades, it doesn't crash.
 
 ---
 
@@ -176,7 +176,7 @@ Layers are extra passes drawn **after** the base texture pass. There are two way
 ```java
 GeoArmorRenderer.of(modelId, textureId)
     .radiant()                                                          // emissive glow
-    .trim(Identifier.of(MOD_ID, "armor/trim/crimson_generic"), false);  // trim, sorted on top
+    .trim(new Identifier(MOD_ID, "armor/trim/crimson_generic"), false);  // trim, sorted on top
 ```
 
 Sorting follows `ArmorRenderLayer.preferredOrder()`: `ORDER_EMISSIVE` (100) → `ORDER_TRIM` (200) → `ORDER_OVERLAY` (300, the default for custom layers). The sort is stable — layers sharing an order keep the order they were added. Each pass method returns a **new** renderer, so finish the chain before registering it.
@@ -186,12 +186,12 @@ Sorting follows `ArmorRenderLayer.preferredOrder()`: `ORDER_EMISSIVE` (100) → 
 ```java
 new GeoArmorRenderer(modelId, textureId, List.of(
     new EmissiveLayer(Mode.RADIANT),                               // glow first,
-    new TrimLayer(Identifier.of(MOD_ID, "armor/trim/crimson_generic"), false)))  // trim on top
+    new TrimLayer(new Identifier(MOD_ID, "armor/trim/crimson_generic"), false)))  // trim on top
 ```
 
 ### TrimLayer — smithing trims with your art
 
-Renders the vanilla trim component using **per-set trim textures** from the armor-trims atlas.
+Renders the vanilla armor trim (the stack's `Trim` NBT) using **per-set trim textures** from the armor-trims atlas.
 
 ```java
 new TrimLayer(baseTexture)          // sprite per pattern+material: <base>_<pattern>_<material>
@@ -294,5 +294,5 @@ Two rules for any **custom `RenderLayer`** you build for armor (both learned the
 
 **License**: MIT. The armor bone-name convention and the reference math for anchoring Bedrock geometry to the vanilla skeleton derive from [AzureLib Armor](https://github.com/AzureDoom/AzureLib-Armor) (itself a GeckoLib fork), both MIT — see `NOTICE`. No source code from either project is included.
 
-**Example mod / dev smoke test**: the `example/` modules are a separate, never-published mod (`armor_model_api_example`) consuming the API exactly like a real content mod — all test assets and registrations live there, keeping the API jar clean. `./gradlew :example-fabric:runClient` (or `:example-neoforge:runClient`) launches the game with the API loaded as a dependency mod and test renderers registered on vanilla armor — iron: a plain example set; diamond: emissive glowmask; netherite: radiant glow; gold: waist-bone set. Wear a piece and compare against the source model in Blockbench. `example/common/src/main/java/.../ExampleArmor.java` is the reference for consumer-side registration.
+**Example mod / dev smoke test**: the `example/` modules are a separate, never-published mod (`armor_model_api_example`) consuming the API exactly like a real content mod — all test assets and registrations live there, keeping the API jar clean. `./gradlew :example-fabric:runClient` (or `:example-forge:runClient`) launches the game with the API loaded as a dependency mod and test renderers registered on vanilla armor — iron: a plain example set; diamond: emissive glowmask; netherite: radiant glow; gold: waist-bone set. Wear a piece and compare against the source model in Blockbench. `example/common/src/main/java/.../ExampleArmor.java` is the reference for consumer-side registration.
 

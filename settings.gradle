@@ -11,14 +11,14 @@ rootProject.name = 'armor_model_api'
 
 include 'common'
 include 'fabric'
-include 'neoforge'
+include 'forge'
 
 // Example/dev mod consuming the API (never published). Flat names on purpose: a nested
 // `example:common` include would create an empty `:example` aggregator project, and the root
 // subprojects block would apply Loom + minecraft deps + publishing to it.
 include 'example-common'
 include 'example-fabric'
-include 'example-neoforge'
+include 'example-forge'
 project(':example-common').projectDir = file('example/common')
 project(':example-fabric').projectDir = file('example/fabric')
-project(':example-neoforge').projectDir = file('example/neoforge')
+project(':example-forge').projectDir = file('example/forge')

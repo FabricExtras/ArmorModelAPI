@@ -32,7 +32,7 @@ public final class ArmorModelApiFabricClient implements ClientModInitializer {
                 .registerReloadListener(new SimpleSynchronousResourceReloadListener() {
                     @Override
                     public Identifier getFabricId() {
-                        return Identifier.of(ArmorModelApi.MOD_ID, "geo_models");
+                        return new Identifier(ArmorModelApi.MOD_ID, "geo_models");
                     }
 
                     @Override

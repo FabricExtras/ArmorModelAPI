@@ -125,7 +125,8 @@ public class EmissiveLayer implements ArmorRenderLayer {
                 context.matrices(),
                 context.vertexConsumers().getBuffer(layer),
                 LightmapTextureManager.MAX_LIGHT_COORDINATE,
-                OverlayTexture.DEFAULT_UV);
+                OverlayTexture.DEFAULT_UV,
+                1F, 1F, 1F, 1F);
     }
 
     /// The renderable glow texture (already composited), or null to skip the pass.
@@ -191,7 +192,7 @@ public class EmissiveLayer implements ArmorRenderLayer {
                 }
             }
 
-            var compositeId = Identifier.of(ArmorModelApi.MOD_ID,
+            var compositeId = new Identifier(ArmorModelApi.MOD_ID,
                     "emissive/" + maskId.getNamespace() + "/" + maskId.getPath());
             // The NativeImageBackedTexture takes ownership of the composite image; registering
             // under an existing id replaces (and closes) a previously baked texture.

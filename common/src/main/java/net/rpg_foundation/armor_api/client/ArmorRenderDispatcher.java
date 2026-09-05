@@ -8,13 +8,11 @@ import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.component.type.DyedColorComponent;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ArmorItem;
+import net.minecraft.item.DyeableItem;
 import net.minecraft.item.ItemStack;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.util.math.ColorHelper;
 
 /// The one armor render routine, shared verbatim by both platform hooks. Runs inside the
 /// entity feature-render pass, replacing vanilla's `renderArmor` body for registered items:
@@ -25,7 +23,7 @@ import net.minecraft.util.math.ColorHelper;
 /// 4. the renderer's extra layers (trim, glow, ...), each a plain re-render with its own buffer
 ///
 /// Returns false when nothing was rendered (unregistered item, wrong slot, missing model) so
-/// the NeoForge mixin can leave vanilla rendering untouched in that case.
+/// the Forge mixin can leave vanilla rendering untouched in that case.
 @Environment(EnvType.CLIENT)
 public final class ArmorRenderDispatcher {
 
@@ -57,14 +55,22 @@ public final class ArmorRenderDispatcher {
         contextModel.copyBipedStateTo(model);
         model.applySlotVisibility(slot);
 
-        int color = stack.isIn(ItemTags.DYEABLE)
-                ? ColorHelper.Argb.fullAlpha(DyedColorComponent.getColor(stack, DyedColorComponent.DEFAULT_COLOR))
-                : -1;
+        // 1.20.1 has no dye component: dye color lives in NBT behind the DyeableItem interface
+        // (vanilla's DyeableArmorItem implements it; Forge widens its armor check to the
+        // interface, so this covers both). The base pass tints via the float color channels.
+        float red = 1F, green = 1F, blue = 1F;
+        if (armorItem instanceof DyeableItem dyeable) {
+            int color = dyeable.getColor(stack);
+            red = (color >> 16 & 0xFF) / 255F;
+            green = (color >> 8 & 0xFF) / 255F;
+            blue = (color & 0xFF) / 255F;
+        }
         var consumer = ItemRenderer.getArmorGlintConsumer(
                 vertexConsumers,
                 RenderLayer.getArmorCutoutNoCull(renderer.config().texture()),
+                false,
                 stack.hasGlint());
-        model.render(matrices, consumer, light, OverlayTexture.DEFAULT_UV, color);
+        model.render(matrices, consumer, light, OverlayTexture.DEFAULT_UV, red, green, blue, 1F);
 
         var context = new ArmorRenderContext(matrices, vertexConsumers, stack, entity, slot, light, renderer, model);
         for (var layer : renderer.config().layers()) {

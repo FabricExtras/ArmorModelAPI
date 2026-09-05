@@ -1,5 +1,7 @@
 accessWidener	v2	named
-# Custom render layer construction (ArmorRenderLayers): RenderLayer.of and its MultiPhase
-# return type are package-private in yarn; same widening SpellEngine uses for its layers.
+# Custom render layer construction (ArmorRenderLayers): in 1.20.1 the 7-arg RenderLayer.of is
+# PRIVATE and its MultiPhase return type package-private (a mixin @Invoker can't name that
+# type, and Mixin's factory invokers demand an exact return type). Same widening the legacy
+# SpellEngine 1.20.1 branch used for its layers. On Forge, Loom converts it to an AT.
 accessible    class    net/minecraft/client/render/RenderLayer$MultiPhase
 accessible    method    net/minecraft/client/render/RenderLayer    of    (Ljava/lang/String;Lnet/minecraft/client/render/VertexFormat;Lnet/minecraft/client/render/VertexFormat$DrawMode;IZZLnet/minecraft/client/render/RenderLayer$MultiPhaseParameters;)Lnet/minecraft/client/render/RenderLayer$MultiPhase;

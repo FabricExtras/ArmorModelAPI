@@ -9,7 +9,6 @@ import net.minecraft.client.render.item.ItemRenderer;
 import net.minecraft.client.texture.MissingSprite;
 import net.minecraft.client.texture.Sprite;
 import net.minecraft.client.texture.SpriteAtlasTexture;
-import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.trim.ArmorTrim;
 import net.minecraft.util.Identifier;
 import net.rpg_foundation.armor_api.ArmorModelApi;
@@ -82,7 +81,8 @@ public class TrimLayer implements ArmorRenderLayer {
 
     @Override
     public void render(ArmorRenderContext context) {
-        var trim = context.stack().get(DataComponentTypes.TRIM);
+        // 1.20.1 keeps the trim in the stack's "Trim" NBT, decoded against the world's registries.
+        var trim = ArmorTrim.getTrim(context.entity().getWorld().getRegistryManager(), context.stack()).orElse(null);
         if (trim == null) {
             return;
         }
@@ -92,11 +92,14 @@ public class TrimLayer implements ArmorRenderLayer {
         if (sprite == null) {
             return;
         }
+        // No decal-pattern trims before 1.21 (getArmorTrims takes no argument); glint over the
+        // trim goes through the same entity-glint union the base pass uses.
         var consumer = sprite.getTextureSpecificVertexConsumer(ItemRenderer.getArmorGlintConsumer(
                 context.vertexConsumers(),
-                TexturedRenderLayers.getArmorTrims(trim.getPattern().value().decal()),
+                TexturedRenderLayers.getArmorTrims(),
+                false,
                 context.stack().hasGlint()));
-        context.model().render(context.matrices(), consumer, context.light(), OverlayTexture.DEFAULT_UV);
+        context.model().render(context.matrices(), consumer, context.light(), OverlayTexture.DEFAULT_UV, 1F, 1F, 1F, 1F);
     }
 
     /// The sprite for the item's trim; the greyscale fallback when the permutation isn't in
