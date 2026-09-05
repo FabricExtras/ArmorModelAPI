@@ -1,5 +1,6 @@
 # 1.1.0
 
+- Minecraft 26.2 support
 - Per-item model and texture overrides through the vanilla `minecraft:custom_data` component
   (`{armor_model_api:{model, texture, glowmask, trim}}`), settable by commands, loot tables,
   recipes and datapacks - no custom component, the library stays client-side
