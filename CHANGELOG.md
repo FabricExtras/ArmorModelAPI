@@ -1,12 +1,10 @@
-# 1.0.0.001
+# 1.0.0
 
 Port of 1.0.0 to Minecraft 1.20.1 (Fabric + Forge 47). Same feature set; no functional changes.
 
 - Forge replaces NeoForge: the armor hook is a mixin on `ArmorFeatureRenderer#renderArmor`
 - Dye color read through `DyeableItem`, trims through the stack's `Trim` NBT
 - Shader awareness gates on Iris (Fabric) or Oculus (Forge)
-
-# 1.0.0
 
 Initial release.
 
