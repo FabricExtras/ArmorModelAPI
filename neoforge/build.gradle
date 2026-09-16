@@ -41,7 +41,8 @@ repositories {
 
 dependencies {
     // Compile-only: ShaderCompat reaches IrisApi behind an isModLoaded gate
-    compileOnly("maven.modrinth:iris:${rootProject.iris_version}-neoforge")
+    // (own pin: no NeoForge Iris build for this game version yet - see gradle.properties)
+    compileOnly("maven.modrinth:iris:${rootProject.iris_neoforge_version}-neoforge")
 
     neoForge "net.neoforged:neoforge:$rootProject.neoforge_version"
 
