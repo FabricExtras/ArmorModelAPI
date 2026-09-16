@@ -29,8 +29,8 @@ import java.util.List;
 ///
 /// Trim test: trim any piece at a smithing table, or:
 ///   /give @p iron_chestplate[trim={material:"minecraft:redstone",pattern:"minecraft:sentry"}]
-/// (patterns are ignored - material-only permutations, like the Wizards sets). A trim material
-/// added by a third-party mod exercises TrimLayer's greyscale fallback.
+/// (patterns are ignored - one greyscale texture per set, like the Wizards sets, recolored by
+/// the material's palette). A trim material added by a third-party mod recolors it the same way.
 ///
 /// Override test (`custom_data` component, see README "Item component overrides"): iron wearing
 /// the chainmail set's assets, then a broken model id that must fall back to iron's own model:

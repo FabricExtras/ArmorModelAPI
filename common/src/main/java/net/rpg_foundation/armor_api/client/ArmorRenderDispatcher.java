@@ -19,8 +19,9 @@ import net.rpg_foundation.armor_api.client.model.GeoArmorBones;
 ///    override model falls back to the renderer's own)
 /// 2. the per-slot model (slot visibility baked in, incl. the FEET → boot bones mapping
 ///    vanilla can't express); the vanilla pose is applied at draw time from the render state
-/// 3. base pass - armor cutout render layer, dye color, then the armor glint pass
-/// 4. the renderer's extra layers (trim, glow, ...), each a plain re-submit with its own layer
+/// 3. base pass - armor cutout render layer, dye color, with the glint folded in for untrimmed foil
+/// 4. the renderer's extra layers (trim, glow, ...), each a plain re-submit with its own layer;
+///    a trimmed foil piece gets vanilla's post-trim glint pass after its trim (or last)
 ///
 /// An item without a renderer is still rendered when its stack's overrides name both a model
 /// and a texture ([ArmorOverrides#takesOver]) - through the shared
@@ -77,13 +78,15 @@ public final class ArmorRenderDispatcher {
         // stack's dyed_color component. Same here: dyed → tint, undyed → untinted.
         int color = DyedItemColor.getOrDefault(stack, -1);
         var context = new ArmorRenderContext(matrices, queue, stack, state, slot, light, renderer, model, texture, overrides);
-        context.submit(RenderTypes.armorCutoutNoCull(texture), light, color, null);
-        if (stack.hasFoil()) {
-            context.submit(RenderTypes.armorEntityGlint(), light, color, null);
-        }
+        // 26.3: no standalone glint pass any more. Like vanilla's EquipmentLayerRenderer, an
+        // untrimmed foil piece draws its glint inside the base pass; a trimmed one gets the
+        // post-trim glint from the context (after the trim layer, else after the last layer).
+        boolean glintOnBase = stack.hasFoil() && !context.glintPending();
+        context.submit(glintOnBase ? RenderTypes.armorCutoutNoCullGlint(texture) : RenderTypes.armorCutoutNoCull(texture), light, color, null);
         for (var layer : renderer.config().layers()) {
             layer.render(context);
         }
+        context.submitPendingGlint();
         return true;
     }
 }

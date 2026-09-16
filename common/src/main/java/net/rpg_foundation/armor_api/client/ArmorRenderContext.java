@@ -4,8 +4,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.renderer.texture.UvMapping;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
@@ -37,6 +39,11 @@ public final class ArmorRenderContext {
     private final Identifier texture;
     private final ArmorOverrides overrides;
     private int nextOrder;
+    /// Since 26.3 the armor glint is not a pass of its own: untrimmed foil rides the base pass
+    /// (`armorCutoutNoCullGlint`), trimmed foil is a separate glint drawn *after* the trim so
+    /// it covers the trim too (`trimmedArmorGlint`). Set for the latter; consumed by
+    /// [#submitPendingGlint].
+    private boolean glintPending;
 
     public ArmorRenderContext(
             PoseStack matrices,
@@ -60,6 +67,7 @@ public final class ArmorRenderContext {
         this.model = model;
         this.texture = texture;
         this.overrides = overrides;
+        this.glintPending = stack.hasFoil() && stack.has(DataComponents.TRIM);
     }
 
     public PoseStack matrices() { return matrices; }
@@ -79,11 +87,33 @@ public final class ArmorRenderContext {
     /// Submits one full re-render of the model on the given render layer, after every pass
     /// submitted so far.
     ///
-    /// @param color  ARGB tint, `-1` for none
-    /// @param sprite atlas sprite to remap the model's UVs onto, or null to sample the layer's texture
+    /// @param color     ARGB tint, `-1` for none
+    /// @param uvMapping UV remap onto a region of the layer's texture (an atlas sprite, a
+    ///                  paletted-texture handle), or null to sample the layer's texture as is
+    public void submit(RenderType layer, int light, int color, @Nullable UvMapping uvMapping) {
+        submit(layer, light, color, uvMapping, state.outlineColor);
+    }
+
+    /// Whether the stack's enchantment glint still has to be drawn: a trimmed foil piece takes
+    /// vanilla's post-trim glint pass, and until [#submitPendingGlint] is called it is pending.
+    public boolean glintPending() {
+        return glintPending;
+    }
+
+    /// Submits the trimmed-armor glint pass if it is still pending (no-op otherwise). The trim
+    /// layer calls this right after its trim pass so the glint lands on top of the trim, as in
+    /// vanilla; the dispatcher calls it after the last layer for renderers without a trim pass.
+    public void submitPendingGlint() {
+        if (!glintPending) {
+            return;
+        }
+        glintPending = false;
+        submit(RenderTypes.trimmedArmorGlint(), light, -1, null, 0); // vanilla passes no outline for the glint
+    }
+
     @SuppressWarnings("unchecked")
-    public void submit(RenderType layer, int light, int color, @Nullable TextureAtlasSprite sprite) {
+    private void submit(RenderType layer, int light, int color, @Nullable UvMapping uvMapping, int outlineColor) {
         queue.order(nextOrder++)
-                .submitModel((net.minecraft.client.model.EntityModel<HumanoidRenderState>) (net.minecraft.client.model.Model<?>) model, state, matrices, layer, light, OverlayTexture.NO_OVERLAY, color, sprite, state.outlineColor, null);
+                .submitModel((net.minecraft.client.model.EntityModel<HumanoidRenderState>) (net.minecraft.client.model.Model<?>) model, state, matrices, layer, light, OverlayTexture.NO_OVERLAY, color, uvMapping, outlineColor);
     }
 }

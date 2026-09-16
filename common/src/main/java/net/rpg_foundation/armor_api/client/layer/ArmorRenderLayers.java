@@ -1,10 +1,10 @@
 package net.rpg_foundation.armor_api.client.layer;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
-import com.mojang.blaze3d.pipeline.ColorTargetState;
-import com.mojang.blaze3d.pipeline.DepthStencilState;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.CompareOp;
+import com.mojang.renderpearl.api.pipeline.BlendFunction;
+import com.mojang.renderpearl.api.pipeline.ColorTargetState;
+import com.mojang.renderpearl.api.pipeline.CompareOp;
+import com.mojang.renderpearl.api.pipeline.DepthStencilState;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import net.minecraft.client.renderer.BindGroupLayouts;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.rendertype.LayeringTransform;
@@ -20,6 +20,13 @@ import java.util.function.Function;
 /// Custom render layers for armor passes. Since 1.21.11 a render layer is a public
 /// `RenderSetup` over a `RenderPipeline` (which owns blend/depth/cull state), so no access
 /// widener is needed any more; the pipelines are compiled on first use.
+///
+/// Every layer here blends, and since 26.3 a blending model submit is routed to the
+/// translucent phase - which, with *Improved Transparency* on, is the order-independent
+/// (OIT) phase, where a render type without OIT pipelines throws. These passes are overdraw
+/// at the armor's own depth over an opaque base pass, so they have no use for OIT (the
+/// radiant fill even writes depth for the burn, which OIT never does): like vanilla's
+/// `trimmedArmorGlint`, they force the solid model phase and draw in submission order.
 public final class ArmorRenderLayers {
 
     private ArmorRenderLayers() { }
@@ -38,6 +45,7 @@ public final class ArmorRenderLayers {
                             .useOverlay()
                             .sortOnUpload()
                             .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
+                            .withForcedSolidModelPhase()
                             .createRenderSetup()));
 
     public static RenderType emissive(Identifier texture) {
@@ -58,8 +66,8 @@ public final class ArmorRenderLayers {
     // a single plain additive duplicate (gain 1), which keeps the damage minimal.
 
     /// Emissive fill: the translucent-emissive pipeline, but WRITING depth so the burn's
-    /// depth test has an anchor. Translucent-classified on purpose (see EmissiveLayer): it
-    /// must stay in the same sorting bucket as the (possibly SS-translucent) base pass.
+    /// depth test has an anchor. Blending on purpose (see EmissiveLayer); the phase it draws
+    /// in is pinned to solid by the render setup (see the class comment).
     private static final RenderPipeline RADIANT_FILL_PIPELINE = RenderPipeline.builder(RenderPipelines.ENTITY_EMISSIVE_SNIPPET)
             .withLocation(Identifier.fromNamespaceAndPath(ArmorModelApi.MOD_ID, "pipeline/radiant_fill"))
             .withShaderDefine("ALPHA_CUTOUT", 0.1F)
@@ -90,6 +98,7 @@ public final class ArmorRenderLayers {
                             .useOverlay()
                             .sortOnUpload()
                             .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
+                            .withForcedSolidModelPhase()
                             .createRenderSetup()));
 
     private static final Function<Identifier, RenderType> RADIANT_BURN = Util.memoize(texture ->
@@ -100,6 +109,7 @@ public final class ArmorRenderLayers {
                             .useOverlay()
                             .sortOnUpload()
                             .setLayeringTransform(LayeringTransform.VIEW_OFFSET_Z_LAYERING)
+                            .withForcedSolidModelPhase()
                             .createRenderSetup()));
 
     /// @param emissiveTexture the composited glow texture, not the base armor texture

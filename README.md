@@ -92,7 +92,7 @@ Two files make an armor set renderable:
 
 The geometry is a Bedrock-format model exported from Blockbench, with bones named by the armor convention (see [Authoring armor models](#authoring-armor-models)). The texture is the model's own texture at the size declared in the geo file's `description`.
 
-Optional, added later as you need them: a `<set_name>_glowmask.png` next to the texture for glow, and a trim texture + atlas entry for smithing trims.
+Optional, added later as you need them: a `<set_name>_glowmask.png` next to the texture for glow, and a greyscale trim texture (with its palette metadata) for smithing trims.
 
 ### 2. Register the renderer
 
@@ -172,7 +172,7 @@ Any armor stack can carry its own assets in the vanilla **`minecraft:custom_data
     model:    "<mod>:geo/<set>.geo.json",              // geo model
     texture:  "<mod>:textures/armor/<set>.png",        // base texture
     glowmask: "<mod>:textures/armor/<set>_glowmask.png", // emissive mask (optional)
-    trim:     "<mod>:armor/trim/<set>_generic"         // trim sprite base (optional)
+    trim:     "<mod>:armor/trim/<set>_generic"         // trim texture base (optional)
 }}]
 ```
 
@@ -187,7 +187,7 @@ On an item registered through `ArmorRenderers.register`, the component decides *
 | `model` | the renderer's geo model | loaded and cached like any registered model; if it is missing or broken the piece logs once and **falls back to the renderer's own model** |
 | `texture` | the base texture | also becomes the base for the derived `_glowmask` name and for the emissive composite; a missing file shows the missing texture, like vanilla |
 | `glowmask` | the emissive mask | wins over both a constructor-given mask and the derived name |
-| `trim` | the trim sprite base | same `<base>_<material>` / `<base>_<pattern>_<material>` naming as the layer was built with, and it becomes the greyscale fallback; layers built from a custom permutation function ignore it |
+| `trim` | the trim texture base | same `<base>` / `<base>_<pattern>` naming as the layer was built with (recolored per material at runtime), and it is the fallback when the pattern permutation is missing; layers built from a custom permutation function ignore it |
 
 The renderer's pass stack (glow mode, trim naming, custom layers) is unchanged — only the assets those passes read are swapped.
 
@@ -203,13 +203,13 @@ Taken-over pieces draw with a **default pass stack**: a plain emissive glow from
 
 ### Where the assets come from
 
-The identifiers are resolved by the **client's** resource manager, exactly like a registered set's assets: the geo file, textures and trim sprites must exist in a mod or resource pack loaded on the client that renders the piece. A datapack can carry the data, but not the art — ship the assets in a resource pack or a mod. Referencing another mod's assets (as in the example above) works only where that mod is installed. When a model cannot be found the log says so:
+The identifiers are resolved by the **client's** resource manager, exactly like a registered set's assets: the geo file, textures and trim textures must exist in a mod or resource pack loaded on the client that renders the piece. A datapack can carry the data, but not the art — ship the assets in a resource pack or a mod. Referencing another mod's assets (as in the example above) works only where that mod is installed. When a model cannot be found the log says so:
 
 ```
 Geo model '<id>' not found; its armor will not render
 ```
 
-For a registered piece that means the renderer's own model is drawn instead; for a takeover it means the item rendered as vanilla. A missing glowmask or trim sprite is likewise logged once and that pass is skipped.
+For a registered piece that means the renderer's own model is drawn instead; for a takeover it means the item rendered as vanilla. A missing glowmask or trim texture is likewise logged once and that pass is skipped.
 
 ### Notes for layer authors
 
@@ -243,45 +243,29 @@ new GeoArmorRenderer(modelId, textureId, List.of(
 
 ### TrimLayer — smithing trims with your art
 
-Renders the vanilla trim component using **per-set trim textures** from the armor-trims atlas.
+Renders the vanilla trim component using **per-set greyscale trim textures**, recolored with the trim material's palette by vanilla's paletted-texture manager (the same mechanism vanilla's own trims use since 26.3).
 
 ```java
-new TrimLayer(baseTexture)          // sprite per pattern+material: <base>_<pattern>_<material>
-new TrimLayer(baseTexture, false)   // sprite per material only:    <base>_<material>
+new TrimLayer(baseTexture)          // texture per pattern: <base>_<pattern>
+new TrimLayer(baseTexture, false)   // one texture for every pattern: <base>
 new TrimLayer(trim -> customId)     // fully custom naming (no fallback — unresolved trims skip)
-new TrimLayer(trim -> customId, fallbackId)  // custom naming + explicit fallback sprite
+new TrimLayer(trim -> customId, fallbackId)  // custom naming + explicit fallback texture
 ```
 
-The sprites come from vanilla's `paletted_permutations` atlas source — one greyscale trim texture per set, recolored per trim material automatically. Add the texture at `assets/<mod>/textures/armor/trim/<set>_generic.png` and an atlas entry (the `single` source stitches the greyscale itself, for the fallback described below):
+The material is not part of the name: one greyscale texture per set is enough, and every trim material — vanilla or third-party — recolors it through its own `palette_id`. Add the texture at `assets/<mod>/textures/armor/trim/<set>_generic.png`, drawn in the eight greys of vanilla's trim key palette (`#e0e0e0`, `#c0c0c0`, `#a0a0a0`, `#808080`, `#606060`, `#404040`, `#202020`, `#000000` — unchanged from the pre-26.3 `trim_palette` key, so existing art carries over), plus a metadata file next to it naming that key palette:
 
 ```json
-// assets/minecraft/atlases/armor_trims.json
+// assets/<mod>/textures/armor/trim/<set>_generic.png.mcmeta
 {
-  "replace": false,
-  "sources": [{
-    "type": "single",
-    "resource": "<mod>:armor/trim/<set>_generic"
-  }, {
-    "type": "paletted_permutations",
-    "textures": ["<mod>:armor/trim/<set>_generic"],
-    "palette_key": "trims/color_palettes/trim_palette",
-    "permutations": {
-      "quartz": "trims/color_palettes/quartz",
-      "iron": "trims/color_palettes/iron",
-      "gold": "trims/color_palettes/gold",
-      "diamond": "trims/color_palettes/diamond",
-      "netherite": "trims/color_palettes/netherite",
-      "redstone": "trims/color_palettes/redstone",
-      "copper": "trims/color_palettes/copper",
-      "emerald": "trims/color_palettes/emerald",
-      "lapis": "trims/color_palettes/lapis",
-      "amethyst": "trims/color_palettes/amethyst"
-    }
-  }]
+  "palette": {
+    "base_palette": "minecraft:trim_base"
+  }
 }
 ```
 
-**Third-party trim materials — greyscale fallback.** Mods can register new trim materials (with their own color palettes); a fixed `paletted_permutations` source generates no variant for materials it doesn't list, so those trims would resolve to the missing sprite. When that happens, `TrimLayer` falls back to the set's **greyscale base texture** — an uncolored trim instead of the magenta checker. The fallback needs the greyscale stitched into the atlas, which is what the `single` source above does. If the fallback sprite is missing too, the trim pass skips itself; both cases log once per resource reload. The base-texture constructors wire the fallback automatically; the custom-function constructor takes it as an optional second argument.
+Without the metadata the texture is drawn uncolored. The old `assets/minecraft/atlases/armor_trims.json` entry is obsolete (that atlas no longer exists) and can be deleted.
+
+**Missing textures.** A texture that doesn't exist skips the trim pass instead of drawing the magenta checker, logged once per resource reload. The base-texture constructors first fall back from `<base>_<pattern>` to the plain `<base>`; the custom-function constructor takes an optional fallback texture as its second argument.
 
 ### EmissiveLayer — glowmask
 
