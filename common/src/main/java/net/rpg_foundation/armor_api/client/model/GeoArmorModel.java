@@ -7,15 +7,16 @@ import net.minecraft.world.entity.EquipmentSlot;
 import org.jetbrains.annotations.Nullable;
 
 /// A real `BipedEntityModel` whose standard parts carry baked geo armor bones as children, for
-/// non-player bipeds (mobs, armor stands). Everything vanilla does with a biped armor model - posing
-/// from the entity render state via `setAngles`, render passes on any render layer - works on it unchanged.
+/// non-player bipeds (mobs, armor stands). It is never posed by its own `setAngles`: at draw time
+/// the pose is copied from the entity's body model ([PoseCopyingModel]), which is what makes it
+/// entity-agnostic - an armor stand's fixed rotations, a zombie's raised arms, a player's
+/// animations all come from the model vanilla already posed for that entity.
 ///
 /// Players get [GeoPlayerArmorModel] instead: player-animation mods (PAL) hook `PlayerEntityModel.setAngles`,
 /// which is also what vanilla's player armor pieces are, so only a `PlayerEntityModel` follows those animations.
 ///
 /// One instance per slot per [net.rpg_foundation.armor_api.client.GeoArmorRenderer]: the slot
-/// visibility is applied once at creation, the pose is (re)applied by the render command queue
-/// right before each draw.
+/// visibility is applied once at creation, the pose is copied on right before each draw.
 public class GeoArmorModel extends HumanoidModel<HumanoidRenderState> implements GeoArmorBones {
     private final GeoArmorBoneSet bones;
 
