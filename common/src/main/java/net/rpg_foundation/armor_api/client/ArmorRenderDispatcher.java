@@ -18,7 +18,8 @@ import net.rpg_foundation.armor_api.client.model.GeoArmorBones;
 /// 1. the stack's [ArmorOverrides] pick the model and base texture in effect (a broken
 ///    override model falls back to the renderer's own)
 /// 2. the per-slot model (slot visibility baked in, incl. the FEET → boot bones mapping
-///    vanilla can't express); the vanilla pose is applied at draw time from the render state
+///    vanilla can't express); the pose is copied from the entity's body model (the layer's
+///    parent model, `contextModel`) at draw time - see [net.rpg_foundation.armor_api.client.model.PoseCopyingModel]
 /// 3. base pass - armor cutout render layer, dye color, with the glint folded in for untrimmed foil
 /// 4. the renderer's extra layers (trim, glow, ...), each a plain re-submit with its own layer;
 ///    a trimmed foil piece gets vanilla's post-trim glint pass after its trim (or last)
@@ -77,7 +78,7 @@ public final class ArmorRenderDispatcher {
         // 26.1: there is no `dyeable` item tag any more; vanilla tints per equipment layer from the
         // stack's dyed_color component. Same here: dyed → tint, undyed → untinted.
         int color = DyedItemColor.getOrDefault(stack, -1);
-        var context = new ArmorRenderContext(matrices, queue, stack, state, slot, light, renderer, model, texture, overrides);
+        var context = new ArmorRenderContext(matrices, queue, stack, state, slot, light, renderer, model, contextModel, texture, overrides);
         // 26.3: no standalone glint pass any more. Like vanilla's EquipmentLayerRenderer, an
         // untrimmed foil piece draws its glint inside the base pass; a trimmed one gets the
         // post-trim glint from the context (after the trim layer, else after the last layer).

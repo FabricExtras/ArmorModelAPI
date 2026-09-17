@@ -112,8 +112,8 @@ public class TrimLayer implements ArmorRenderLayer {
     @Override
     public void render(ArmorRenderContext context) {
         var trim = context.stack().get(DataComponents.TRIM);
-        if (trim == null) {
-            return;
+        if (trim == null || !context.rendersTrims()) {
+            return; // no trim, or a baby (vanilla draws none there either)
         }
         var overrideBase = context.overrides().trim();
         Identifier textureId;
