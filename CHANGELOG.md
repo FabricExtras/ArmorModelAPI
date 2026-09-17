@@ -1,5 +1,6 @@
 # 1.1.1
 
+- Minecraft 26.3 support
 - Geo armor is now posed from the entity's own body model: armor on armor stands no longer sways
   with the idle animation, and baby mobs get properly fitted armor (no trims on babies, like vanilla)
 
