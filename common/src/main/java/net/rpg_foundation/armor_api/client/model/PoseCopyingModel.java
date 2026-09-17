@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -26,7 +27,13 @@ import java.util.WeakHashMap;
 ///
 /// **Adults**: the part transform (position, rotation, scale) is copied one to one. Geo armor
 /// bones are children of the biped parts and follow; visibility stays the armor model's own,
-/// which carries the slot visibility.
+/// which carries the slot visibility - except for **players**, whose biped part visibility is
+/// copied too. `PlayerModel#setupAnim` resets it every call, and player-animation libraries
+/// (PAL, used by Better Combat) hide the body in their first-person pass by clearing it there;
+/// before the pose copy our player armor model *was* a `PlayerModel`, so that hiding applied to
+/// it through its own `setupAnim`, and copying the flags keeps it that way. Mobs and armor stands
+/// keep our visibility on purpose: an armor stand's body model hides its arms when the stand shows
+/// none, while vanilla's stand armor still draws the sleeves.
 ///
 /// **Babies**: vanilla has no single baby rule any more. Small armor stands are the adult mesh
 /// with `BabyModelTransform` baked into the part poses (scale + offset), but zombies, piglins,
@@ -69,6 +76,18 @@ public final class PoseCopyingModel extends Model<HumanoidRenderState> {
             copy(source.leftLeg, armor.leftLeg);
         }
         copy(source.hat, armor.hat); // relative to head, no cubes of its own in armor models
+        if (state instanceof AvatarRenderState) {
+            copyVisibility(source.head, armor.head);
+            copyVisibility(source.body, armor.body);
+            copyVisibility(source.rightArm, armor.rightArm);
+            copyVisibility(source.leftArm, armor.leftArm);
+            copyVisibility(source.rightLeg, armor.rightLeg);
+            copyVisibility(source.leftLeg, armor.leftLeg);
+        }
+    }
+
+    private static void copyVisibility(ModelPart from, ModelPart to) {
+        to.visible = from.visible;
     }
 
     private static void copy(ModelPart from, ModelPart to) {
