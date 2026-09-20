@@ -2,7 +2,6 @@ package net.rpg_foundation.armor_api.client.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.HumanoidModel;
-import net.minecraft.client.model.Model;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
@@ -14,6 +13,13 @@ import java.util.WeakHashMap;
 
 /// The model that is actually submitted for an armor pass: the geo armor model's geometry, posed
 /// at draw time from the entity's own body model.
+///
+/// It is a `HumanoidModel` over the armor's own root on purpose: that is the contract other mods
+/// use to recognise and re-pose an armor model after its `setupAnim` - Entity Model Features
+/// captures the body's animated biped pose (the six parts *and the root*, which Fresh Animations
+/// moves) at submit time and applies it in the feature renderer to every submitted
+/// `HumanoidModel`, exactly like vanilla armor. A plain `Model` wrapper fell outside that and
+/// drifted from the body under EMF animations.
 ///
 /// Since 1.21.9 a submitted model is posed right before it is drawn (`setupAnim(state)` from the
 /// feature renderer), so a pose copied at submit time would be overwritten. Wrapping the pair
@@ -46,12 +52,12 @@ import java.util.WeakHashMap;
 /// source pivot. That gives the adult armor at the baby's proportions and positions for any baby
 /// model that keeps its cubes on the standard parts; a source part without cubes of its own falls
 /// back to the plain copy. Adults see no difference from the fit (their boxes are the reference).
-public final class PoseCopyingModel extends Model<HumanoidRenderState> {
+public final class PoseCopyingModel extends HumanoidModel<HumanoidRenderState> {
     private final HumanoidModel<HumanoidRenderState> source;
     private final HumanoidModel<?> armor;
 
     public PoseCopyingModel(HumanoidModel<HumanoidRenderState> source, HumanoidModel<?> armor) {
-        super(armor.root(), armor::renderType);
+        super(armor.root(), armor::renderType); // same parts as the armor model, so head/body/... are its parts
         this.source = source;
         this.armor = armor;
     }
@@ -60,6 +66,7 @@ public final class PoseCopyingModel extends Model<HumanoidRenderState> {
     public void setupAnim(HumanoidRenderState state) {
         resetPose();
         source.setupAnim(state);
+        copy(source.root(), armor.root()); // whole-body offsets live on the root (animation mods)
         if (state.isBaby) {
             fit(source.head, armor.head, Box.HEAD);
             fit(source.body, armor.body, Box.BODY);
