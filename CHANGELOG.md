@@ -1,3 +1,8 @@
+# 1.1.2
+
+- Geo armor follows Entity Model Features player animations again (Fresh Animations Player, Entity Player Compat)
+- Geo armor no longer shows in first person during Better Combat animations
+
 # 1.1.1
 
 - Geo armor is now posed from the entity's own body model: armor on armor stands no longer sways
