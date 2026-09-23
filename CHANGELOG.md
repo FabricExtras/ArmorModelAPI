@@ -1,11 +1,16 @@
 # 1.1.2
 
+- Minecraft 26.3 support
+- Trims now use the game's paletted textures: each greyscale trim texture needs a `.png.mcmeta` with
+  `{"palette": {"base_palette": "minecraft:trim_base"}}`, and `atlases/armor_trims.json` can be deleted
+- `TrimLayer.spriteId` renamed to `textureId` (no trim material suffix)
+- `ArmorRenderContext#submit` takes a `UvMapping`; added `glintPending()` / `submitPendingGlint()`
+- Glow and radiant layers work with Improved Transparency
 - Geo armor follows Entity Model Features player animations again (Fresh Animations Player, Entity Player Compat)
 - Geo armor no longer shows in first person during Better Combat animations
 
 # 1.1.1
 
-- Minecraft 26.3 support
 - Geo armor is now posed from the entity's own body model: armor on armor stands no longer sways
   with the idle animation, and baby mobs get properly fitted armor (no trims on babies, like vanilla)
 
